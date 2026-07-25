@@ -19,6 +19,17 @@ test('centers the initial map on the user location', async ({ page, context }) =
     });
 });
 
+test('starts Add place at the user location', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({ latitude: 42.3601, longitude: -71.0589 });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /add place/i }).click();
+
+  await expect(page.getByLabel('Latitude')).toHaveValue('42.3601');
+  await expect(page.getByLabel('Longitude')).toHaveValue('-71.0589');
+});
+
 test('adds a place with direct coordinates and finds it in the list', async ({ page }) => {
   const placeName = `Playwright Lookout ${Date.now()}`;
   const browserErrors: string[] = [];

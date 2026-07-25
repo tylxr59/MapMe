@@ -4,6 +4,7 @@
     Archive,
     Database,
     List,
+    LoaderCircle,
     LogOut,
     Map,
     MapPinned,
@@ -26,6 +27,10 @@
   let draft = $state<{ latitude: number; longitude: number } | null>(null);
   let mobileTab = $state<'map' | 'list'>('map');
   let loadingDetail = $state(false);
+  let locating = $state(false);
+  let locationNotice = $state('');
+  let mapCenter = $state({ latitude: 39.5, longitude: -98.35 });
+  let locationNoticeTimer: ReturnType<typeof setTimeout> | undefined;
 
   const mapPlaces = $derived(
     data.places.map((place): MapPlace => ({
@@ -55,11 +60,46 @@
   }
 
   function startAdd(coordinates?: { latitude: number; longitude: number }) {
-    draft = coordinates ?? { latitude: 39.5, longitude: -98.35 };
+    draft = coordinates ?? mapCenter;
     selectedId = null;
     selectedPlace = null;
     editing = false;
     editorOpen = true;
+  }
+
+  function showLocationNotice(message: string) {
+    locationNotice = message;
+    clearTimeout(locationNoticeTimer);
+    locationNoticeTimer = setTimeout(() => {
+      locationNotice = '';
+    }, 5_000);
+  }
+
+  function startAddAtCurrentLocation() {
+    if (locating) return;
+    if (!navigator.geolocation) {
+      startAdd();
+      showLocationNotice('Location is unavailable. Starting from the current map center.');
+      return;
+    }
+
+    locating = true;
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        locating = false;
+        startAdd({ latitude: coords.latitude, longitude: coords.longitude });
+      },
+      () => {
+        locating = false;
+        startAdd();
+        showLocationNotice('Could not access your location. Starting from the current map center.');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10_000,
+        maximumAge: 60_000
+      }
+    );
   }
 
   function mapClicked(coordinates: { latitude: number; longitude: number }) {
@@ -99,8 +139,13 @@
         </form>
       {/if}
     </nav>
-    <button class="add" type="button" onclick={() => startAdd()}
-      ><Plus size={18} /> Add place</button
+    <button
+      class="add"
+      type="button"
+      onclick={startAddAtCurrentLocation}
+      disabled={locating}
+      aria-busy={locating}
+      >{#if locating}<LoaderCircle class="spin" size={18} /> Locating…{:else}<Plus size={18} /> Add place{/if}</button
     >
   </header>
 
@@ -119,6 +164,7 @@
         tileMaxZoom={data.config.tileMaxZoom}
         onselect={selectPlace}
         onmapclick={mapClicked}
+        onviewportchange={(coordinates) => (mapCenter = coordinates)}
       />
       <div class="map-hint">Click the map to add a place</div>
     </section>
@@ -165,6 +211,7 @@
   </nav>
 
   {#if form?.message}<div class="toast error" role="alert">{form.message}</div>{/if}
+  {#if locationNotice}<div class="toast" role="status">{locationNotice}</div>{/if}
 </div>
 
 <style>
@@ -233,6 +280,13 @@
     color: var(--accent-text);
     padding: 0.65rem 0.8rem;
     font-weight: 780;
+  }
+  .add:disabled {
+    cursor: wait;
+    opacity: 0.78;
+  }
+  .add :global(.spin) {
+    animation: spin 0.85s linear infinite;
   }
   main {
     position: relative;
@@ -306,6 +360,11 @@
   }
   .toast.error {
     background: #8b2e29;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
   @media (max-width: 760px) {
     .app-shell {

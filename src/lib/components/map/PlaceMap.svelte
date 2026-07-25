@@ -10,7 +10,8 @@
     tileAttribution,
     tileMaxZoom,
     onselect,
-    onmapclick
+    onmapclick,
+    onviewportchange
   }: {
     places: MapPlace[];
     selectedId?: string | null;
@@ -20,6 +21,7 @@
     tileMaxZoom: number;
     onselect: (id: string) => void;
     onmapclick: (coordinates: { latitude: number; longitude: number }) => void;
+    onviewportchange?: (coordinates: { latitude: number; longitude: number }) => void;
   } = $props();
 
   let container: HTMLDivElement;
@@ -35,6 +37,7 @@
       'mapme.viewport',
       JSON.stringify({ center: [point.lat, point.lng], zoom: map.getZoom() })
     );
+    onviewportchange?.({ latitude: point.lat, longitude: point.lng });
   }
 
   function centerOnCurrentLocation() {
@@ -162,6 +165,7 @@
         onmapclick({ latitude: event.latlng.lat, longitude: event.latlng.lng })
       );
       map.on('moveend', saveViewport);
+      onviewportchange?.({ latitude: center[0], longitude: center[1] });
       if (!saved) centerOnCurrentLocation();
       refreshMarkers();
       refreshDraft();
