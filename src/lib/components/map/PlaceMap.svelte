@@ -58,7 +58,8 @@
   }
 
   function markerHtml(place: MapPlace): string {
-    return `<div class="mapme-marker" style="background:${place.category.color}">${place.category.iconSvg}</div>`;
+    const icon = place.category.iconName === 'map-pin' ? '' : place.category.iconSvg;
+    return `<div class="mapme-marker" style="background:${place.category.color}">${icon}</div>`;
   }
 
   function refreshMarkers() {
