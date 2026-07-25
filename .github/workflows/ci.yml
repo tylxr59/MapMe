@@ -55,7 +55,7 @@ jobs:
           done
           test "$(docker inspect --format='{{.State.Health.Status}}' mapme-ci)" = healthy
           curl --fail http://127.0.0.1:3000/healthz
-          test -f "${RUNNER_TEMP}/mapme-ci-data/database.sqlite"
+          docker exec mapme-ci test -f /data/database.sqlite
           docker restart mapme-ci
           for attempt in $(seq 1 30); do
             curl --fail --silent http://127.0.0.1:3000/healthz && break
