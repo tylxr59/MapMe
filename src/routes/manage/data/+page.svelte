@@ -30,6 +30,22 @@
   let restoreMessage = $state('');
   let restoreBusy = $state(false);
 
+  async function readApiResponse<T extends { error?: string }>(
+    response: Response,
+    fallbackMessage: string
+  ): Promise<T> {
+    const body = await response.text();
+    let result: T;
+    try {
+      result = JSON.parse(body) as T;
+    } catch {
+      if (!response.ok) throw new Error(body.trim() || fallbackMessage);
+      throw new Error(fallbackMessage);
+    }
+    if (!response.ok) throw new Error(result.error ?? fallbackMessage);
+    return result;
+  }
+
   async function previewImport() {
     const file = importFile.files?.[0];
     if (!file) return;
@@ -39,8 +55,10 @@
       const body = new FormData();
       body.set('file', file);
       const response = await fetch('/api/imports/preview', { method: 'POST', body });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? 'Could not preview import');
+      const result = await readApiResponse<{ preview: ImportPreview; error?: string }>(
+        response,
+        'Could not preview import'
+      );
       preview = result.preview;
       included = preview!.records
         .filter((record) => record.valid && !record.duplicateOf)
@@ -66,8 +84,11 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ include: included, copyDuplicates: copies })
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? 'Import failed');
+      const result = await readApiResponse<{
+        imported: number;
+        skipped: number;
+        error?: string;
+      }>(response, 'Import failed');
       importMessage = `Imported ${result.imported} places; skipped ${result.skipped}.`;
       preview = null;
       importFile.value = '';
@@ -83,8 +104,10 @@
     backupMessage = '';
     try {
       const response = await fetch('/api/backups', { method: 'POST' });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? 'Backup failed');
+      const result = await readApiResponse<{
+        backup: { filename: string };
+        error?: string;
+      }>(response, 'Backup failed');
       backupMessage = `Created ${result.backup.filename}`;
       await invalidateAll();
     } catch (error) {
@@ -109,8 +132,14 @@
       const body = new FormData();
       body.set('file', file);
       const response = await fetch('/api/restore/inspect', { method: 'POST', body });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? 'Backup inspection failed');
+      const result = await readApiResponse<{
+        inspection: {
+          token: string;
+          manifest: BackupManifest;
+          expiresAt: string;
+        };
+        error?: string;
+      }>(response, 'Backup inspection failed');
       restoreInspection = result.inspection;
     } catch (error) {
       restoreMessage = error instanceof Error ? error.message : 'Backup inspection failed';
@@ -126,8 +155,10 @@
       const response = await fetch(`/api/restore/${restoreInspection.token}/confirm`, {
         method: 'POST'
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? 'Could not stage restore');
+      const result = await readApiResponse<{
+        rollbackBackup: string;
+        error?: string;
+      }>(response, 'Could not stage restore');
       restoreMessage = `Restore staged. Restart the container once to activate it. A rollback backup was created as ${result.rollbackBackup}.`;
       restoreInspection = null;
     } catch (error) {
