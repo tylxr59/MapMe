@@ -9,6 +9,7 @@
     Heart,
     ImagePlus,
     MapPin,
+    Navigation,
     Star,
     Trash2,
     X
@@ -74,6 +75,15 @@
     const response = await fetch(`/api/attachments/${id}`, { method: 'DELETE' });
     if (response.ok) onchanged();
     else photoMessage = 'Could not remove the photo.';
+  }
+
+  function sendToMaps() {
+    const coordinates = `${place.latitude},${place.longitude}`;
+    const isAppleDevice = /Macintosh|iPhone|iPad|iPod/.test(navigator.userAgent);
+
+    window.location.href = isAppleDevice
+      ? `https://maps.apple.com/?daddr=${encodeURIComponent(coordinates)}`
+      : `geo:0,0?q=${encodeURIComponent(`${coordinates} (${place.name})`)}`;
   }
 </script>
 
@@ -172,6 +182,9 @@
   <footer>
     <button type="button" class:confirm={deleting} onclick={deletePlace}
       ><Trash2 size={16} /> {deleting ? 'Confirm delete' : 'Delete'}</button
+    >
+    <button type="button" class="maps" onclick={sendToMaps}
+      ><Navigation size={16} /> Send to Maps</button
     >
     <button type="button" class="edit" onclick={onedit}><Edit3 size={16} /> Edit place</button>
   </footer>
@@ -361,9 +374,11 @@
     background: var(--surface-muted);
   }
   footer .edit {
-    margin-left: auto;
     background: var(--accent-bg);
     color: var(--accent-text);
+  }
+  footer .maps {
+    margin-left: auto;
   }
   footer .confirm {
     background: var(--danger);
