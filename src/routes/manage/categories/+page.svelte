@@ -289,8 +289,6 @@
           </span>
           <span class="category-meta">
             <span>{placeLabel(category.placeCount ?? 0)}</span>
-            <span aria-hidden="true">·</span>
-            <span>{iconLabel(category.iconName)}</span>
           </span>
         </span>
         <span class="edit-affordance"><Pencil size={15} /> Edit <ChevronDown size={16} /></span>
@@ -521,15 +519,13 @@
     flex: 0 0 auto;
     place-items: center;
     border: 2px solid #ffffff;
-    border-radius: 50% 50% 50% 0.55rem;
+    border-radius: 50%;
     color: #ffffff;
     box-shadow: 0 3px 10px #14291d35;
-    transform: rotate(-45deg);
   }
   .marker-preview :global(svg) {
     width: 1.25rem;
     height: 1.25rem;
-    transform: rotate(45deg);
   }
   .marker-preview.large {
     width: 3.15rem;
