@@ -19,6 +19,21 @@ test('centers the initial map on the user location', async ({ page, context }) =
     });
 });
 
+test('identifies MapMe as the referrer on tile requests', async ({ page }) => {
+  const tileReferrers: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).hostname === 'tile.openstreetmap.org') {
+      tileReferrers.push(request.headers().referer ?? '');
+    }
+  });
+
+  await page.goto('/');
+  const tile = page.locator('img.leaflet-tile').first();
+  await expect(tile).toBeVisible();
+  await expect(tile).toHaveAttribute('referrerpolicy', 'origin');
+  await expect.poll(() => tileReferrers.find(Boolean)).toBe('http://127.0.0.1:4173/');
+});
+
 test('starts Add place at the user location', async ({ page, context }) => {
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 42.3601, longitude: -71.0589 });

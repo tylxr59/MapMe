@@ -156,7 +156,8 @@
       leaflet
         .tileLayer(tileUrl, {
           attribution: tileAttribution,
-          maxZoom: tileMaxZoom
+          maxZoom: tileMaxZoom,
+          referrerPolicy: 'origin'
         })
         .addTo(map);
       leaflet.control.zoom({ position: 'topright' }).addTo(map);
