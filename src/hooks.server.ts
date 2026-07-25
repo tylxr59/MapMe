@@ -17,7 +17,10 @@ function isPublicPath(pathname: string): boolean {
     pathname === '/login' ||
     pathname === '/healthz' ||
     pathname.startsWith('/_app/') ||
-    pathname === '/favicon.svg'
+    pathname === '/favicon.svg' ||
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/service-worker.js' ||
+    pathname.startsWith('/icons/')
   );
 }
 
