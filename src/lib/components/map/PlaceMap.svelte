@@ -132,6 +132,7 @@
 
   onMount(() => {
     let destroyed = false;
+    let resizeObserver: ResizeObserver | undefined;
     void (async () => {
       const leafletModule = await import('leaflet');
       leaflet = leafletModule.default;
@@ -158,7 +159,7 @@
           maxZoom: tileMaxZoom
         })
         .addTo(map);
-      leaflet.control.zoom({ position: 'bottomright' }).addTo(map);
+      leaflet.control.zoom({ position: 'topright' }).addTo(map);
       cluster = leaflet.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 48 });
       map.addLayer(cluster);
       map.on('click', (event) =>
@@ -169,10 +170,13 @@
       if (!saved) centerOnCurrentLocation();
       refreshMarkers();
       refreshDraft();
+      resizeObserver = new ResizeObserver(() => map?.invalidateSize({ pan: false }));
+      resizeObserver.observe(container);
       setTimeout(() => map?.invalidateSize(), 0);
     })();
     return () => {
       destroyed = true;
+      resizeObserver?.disconnect();
       map?.remove();
       map = null;
     };

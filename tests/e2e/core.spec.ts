@@ -30,6 +30,32 @@ test('starts Add place at the user location', async ({ page, context }) => {
   await expect(page.getByLabel('Longitude')).toHaveValue('-71.0589');
 });
 
+test('uses one collapsible sidebar for places and settings', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  const sidebar = page.getByLabel('Places sidebar');
+  await expect(sidebar).toBeVisible();
+  await expect(sidebar.getByRole('link', { name: 'Settings' })).toHaveAttribute(
+    'href',
+    '/manage/categories'
+  );
+  await expect(page.getByRole('button', { name: /add place/i })).toBeVisible();
+
+  await sidebar.getByRole('button', { name: 'Collapse sidebar' }).click();
+  await expect(sidebar).toBeHidden();
+  await page.getByRole('button', { name: 'Open sidebar' }).click();
+  await expect(sidebar).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(sidebar).toBeHidden();
+  await page.getByRole('button', { name: 'Open sidebar' }).click();
+  await expect(sidebar).toBeVisible();
+  await sidebar.getByRole('button', { name: 'Collapse sidebar' }).click();
+  await expect(sidebar).toBeHidden();
+});
+
 test('adds a place with direct coordinates and finds it in the list', async ({ page }) => {
   const placeName = `Playwright Lookout ${Date.now()}`;
   const browserErrors: string[] = [];
@@ -50,7 +76,7 @@ test('follows the browser light and dark color scheme', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/');
   await expect(page.locator('.leaflet-container')).toBeVisible();
-  const light = await page.locator('.topbar').evaluate((element) => ({
+  const light = await page.locator('.sidebar-header').evaluate((element) => ({
     background: getComputedStyle(element).backgroundColor,
     text: getComputedStyle(document.body).color,
     tileFilter: getComputedStyle(document.querySelector('.leaflet-tile-pane')!).filter
@@ -59,10 +85,12 @@ test('follows the browser light and dark color scheme', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect
     .poll(() =>
-      page.locator('.topbar').evaluate((element) => getComputedStyle(element).backgroundColor)
+      page
+        .locator('.sidebar-header')
+        .evaluate((element) => getComputedStyle(element).backgroundColor)
     )
     .not.toBe(light.background);
-  const dark = await page.locator('.topbar').evaluate((element) => ({
+  const dark = await page.locator('.sidebar-header').evaluate((element) => ({
     background: getComputedStyle(element).backgroundColor,
     text: getComputedStyle(document.body).color,
     tileFilter: getComputedStyle(document.querySelector('.leaflet-tile-pane')!).filter

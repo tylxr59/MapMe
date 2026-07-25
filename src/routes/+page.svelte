@@ -1,17 +1,6 @@
 <script lang="ts">
-  import { goto, invalidateAll } from '$app/navigation';
-  import {
-    Archive,
-    Database,
-    List,
-    LoaderCircle,
-    LogOut,
-    Map,
-    MapPinned,
-    Plus,
-    Settings2,
-    Tags
-  } from '@lucide/svelte';
+  import { invalidateAll } from '$app/navigation';
+  import { LoaderCircle, LogOut, MapPinned, Menu, Plus, Settings2 } from '@lucide/svelte';
   import FilterBar from '$lib/components/filters/FilterBar.svelte';
   import PlaceMap from '$lib/components/map/PlaceMap.svelte';
   import PlaceDetails from '$lib/components/places/PlaceDetails.svelte';
@@ -25,7 +14,8 @@
   let editorOpen = $state(false);
   let editing = $state(false);
   let draft = $state<{ latitude: number; longitude: number } | null>(null);
-  let mobileTab = $state<'map' | 'list'>('map');
+  let sidebarCollapsed = $state(false);
+  let mobileSidebarOpen = $state(false);
   let loadingDetail = $state(false);
   let locating = $state(false);
   let locationNotice = $state('');
@@ -49,6 +39,7 @@
     selectedId = id;
     editorOpen = false;
     editing = false;
+    mobileSidebarOpen = false;
     loadingDetail = true;
     try {
       const response = await fetch(`/api/places/${id}`);
@@ -107,6 +98,14 @@
     else startAdd(coordinates);
   }
 
+  function toggleSidebar() {
+    if (window.matchMedia('(max-width: 760px)').matches) {
+      mobileSidebarOpen = !mobileSidebarOpen;
+      return;
+    }
+    sidebarCollapsed = !sidebarCollapsed;
+  }
+
   async function saved() {
     editorOpen = false;
     editing = false;
@@ -127,34 +126,89 @@
 </svelte:head>
 
 <div class="app-shell">
-  <header class="topbar">
-    <a class="brand" href="/"><MapPinned size={23} /><strong>MapMe</strong></a>
-    <nav aria-label="Management">
-      <a href="/manage/categories"><Settings2 size={16} /><span>Categories</span></a>
-      <a href="/manage/tags"><Tags size={16} /><span>Tags</span></a>
-      <a href="/manage/data"><Database size={16} /><span>Data</span></a>
-      {#if data.config.authMode === 'password'}
-        <form method="POST" action="/logout">
-          <button aria-label="Sign out"><LogOut size={16} /><span>Sign out</span></button>
-        </form>
-      {/if}
-    </nav>
-    <button
-      class="add"
-      type="button"
-      onclick={startAddAtCurrentLocation}
-      disabled={locating}
-      aria-busy={locating}
-      >{#if locating}<LoaderCircle class="spin" size={18} /> Locating…{:else}<Plus size={18} /> Add place{/if}</button
-    >
-  </header>
-
-  <main>
-    <aside class:mobile-hidden={mobileTab !== 'list'} class="sidebar">
-      <FilterBar filters={data.filters} categories={data.categories} tags={data.tags} />
-      <PlaceList places={data.places} {selectedId} onselect={selectPlace} />
+  <main class:collapsed={sidebarCollapsed} class:drawer-open={mobileSidebarOpen}>
+    <aside class="sidebar" aria-label="Places sidebar">
+      <header class="sidebar-header">
+        <button
+          class="menu-button"
+          type="button"
+          onclick={toggleSidebar}
+          aria-label="Collapse sidebar"
+          aria-expanded="true"
+          aria-controls="places-sidebar-content"
+        >
+          <Menu size={21} />
+        </button>
+        <a class="brand" href="/">
+          <span class="brand-icon"><MapPinned size={20} /></span>
+          <strong>MapMe</strong>
+        </a>
+      </header>
+      <div class="sidebar-content" id="places-sidebar-content">
+        <FilterBar filters={data.filters} categories={data.categories} tags={data.tags} />
+        <PlaceList places={data.places} {selectedId} onselect={selectPlace} />
+      </div>
+      <footer class="sidebar-footer">
+        <a class="settings" href="/manage/categories">
+          <Settings2 size={18} />
+          <span>Settings</span>
+        </a>
+        {#if data.config.authMode === 'password'}
+          <form method="POST" action="/logout">
+            <button type="submit"><LogOut size={18} /><span>Sign out</span></button>
+          </form>
+        {/if}
+      </footer>
     </aside>
-    <section class:mobile-hidden={mobileTab !== 'map'} class="map-pane">
+
+    {#if sidebarCollapsed}
+      <header class="floating-header desktop-launcher">
+        <button
+          class="menu-button"
+          type="button"
+          onclick={toggleSidebar}
+          aria-label="Open sidebar"
+          aria-expanded="false"
+          aria-controls="places-sidebar-content"
+        >
+          <Menu size={21} />
+        </button>
+        <a class="brand" href="/">
+          <span class="brand-icon"><MapPinned size={20} /></span>
+          <strong>MapMe</strong>
+        </a>
+      </header>
+    {/if}
+
+    {#if !mobileSidebarOpen}
+      <header class="floating-header mobile-launcher">
+        <button
+          class="menu-button"
+          type="button"
+          onclick={toggleSidebar}
+          aria-label="Open sidebar"
+          aria-expanded="false"
+          aria-controls="places-sidebar-content"
+        >
+          <Menu size={21} />
+        </button>
+        <a class="brand" href="/">
+          <span class="brand-icon"><MapPinned size={20} /></span>
+          <strong>MapMe</strong>
+        </a>
+      </header>
+    {/if}
+
+    {#if mobileSidebarOpen}
+      <button
+        class="sidebar-backdrop"
+        type="button"
+        onclick={() => (mobileSidebarOpen = false)}
+        aria-label="Close sidebar"
+      ></button>
+    {/if}
+
+    <section class="map-pane" inert={mobileSidebarOpen}>
       <PlaceMap
         places={mapPlaces}
         {selectedId}
@@ -167,6 +221,15 @@
         onviewportchange={(coordinates) => (mapCenter = coordinates)}
       />
       <div class="map-hint">Click the map to add a place</div>
+      <button
+        class="add"
+        type="button"
+        onclick={startAddAtCurrentLocation}
+        disabled={locating}
+        aria-busy={locating}
+        >{#if locating}<LoaderCircle class="spin" size={20} /> Locating…{:else}<Plus size={21} /> Add
+          place{/if}</button
+      >
     </section>
     {#if editorOpen && draft}
       <aside class="panel">
@@ -200,16 +263,6 @@
     {/if}
   </main>
 
-  <nav class="mobile-nav" aria-label="Main view">
-    <button class:active={mobileTab === 'map'} onclick={() => (mobileTab = 'map')}
-      ><Map size={19} /> Map</button
-    >
-    <button class:active={mobileTab === 'list'} onclick={() => (mobileTab = 'list')}
-      ><List size={19} /> Places</button
-    >
-    <button onclick={() => goto('/manage/data')}><Archive size={19} /> Data</button>
-  </nav>
-
   {#if form?.message}<div class="toast error" role="alert">{form.message}</div>{/if}
   {#if locationNotice}<div class="toast" role="status">{locationNotice}</div>{/if}
 </div>
@@ -217,93 +270,174 @@
 <style>
   .app-shell {
     height: 100dvh;
-    display: grid;
-    grid-template-rows: 3.7rem minmax(0, 1fr);
     overflow: hidden;
   }
-  .topbar {
-    z-index: 1001;
+  main {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 380px minmax(0, 1fr);
+    transition: grid-template-columns 220ms ease;
+  }
+  main.collapsed {
+    grid-template-columns: 0 minmax(0, 1fr);
+  }
+  .sidebar-header,
+  .floating-header {
+    min-height: 3.75rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0.55rem 0.8rem 0.55rem 1rem;
+    gap: 0.55rem;
+    padding: 0.5rem 0.75rem;
     border-bottom: 1px solid var(--line);
     background: var(--cream);
     box-shadow: 0 1px 10px var(--shadow-soft);
   }
+  .menu-button {
+    width: 2.6rem;
+    height: 2.6rem;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 0;
+    border-radius: 0.7rem;
+    background: transparent;
+    color: var(--text-secondary);
+  }
+  .menu-button:hover {
+    background: var(--surface-muted);
+    color: var(--green-800);
+  }
   .brand {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.55rem;
     color: var(--green-800);
     text-decoration: none;
+  }
+  .brand-icon {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 0.65rem;
+    background: var(--accent-bg);
+    color: var(--accent-text);
   }
   .brand strong {
     color: var(--green-900);
     font-size: 1.05rem;
   }
-  .topbar nav {
-    display: flex;
-    gap: 0.2rem;
-    margin-left: auto;
-  }
-  .topbar nav a,
-  .topbar nav button {
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    border: 0;
-    border-radius: 0.55rem;
-    padding: 0 0.6rem;
-    color: var(--text-secondary);
-    background: transparent;
-    text-decoration: none;
-    font-size: 0.78rem;
-    font-weight: 700;
-  }
-  .topbar nav a:hover,
-  .topbar nav button:hover {
-    background: var(--surface-muted);
-    color: var(--green-800);
-  }
-  .topbar nav form {
-    margin: 0;
-  }
   .add {
+    position: absolute;
+    z-index: 600;
+    right: 1.25rem;
+    bottom: 2.15rem;
+    min-height: 3.25rem;
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.5rem;
     border: 0;
-    border-radius: 0.65rem;
+    border-radius: 999px;
     background: var(--accent-bg);
     color: var(--accent-text);
-    padding: 0.65rem 0.8rem;
+    padding: 0.75rem 1.05rem;
     font-weight: 780;
+    box-shadow: 0 8px 24px #102a1d40;
+  }
+  .add:hover {
+    background: var(--green-700);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 28px #102a1d4d;
   }
   .add:disabled {
     cursor: wait;
     opacity: 0.78;
+    transform: none;
   }
   .add :global(.spin) {
     animation: spin 0.85s linear infinite;
   }
-  main {
-    position: relative;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 380px minmax(0, 1fr);
-  }
   .sidebar {
+    position: relative;
+    z-index: 1000;
     min-height: 0;
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--line);
     background: var(--cream);
     overflow: hidden;
+    transition:
+      transform 220ms ease,
+      visibility 220ms;
   }
-  .sidebar :global(.place-list) {
+  main.collapsed .sidebar {
+    visibility: hidden;
+    transform: translateX(-100%);
+  }
+  .sidebar-content {
+    min-height: 0;
+    display: flex;
     flex: 1;
+    flex-direction: column;
+  }
+  .sidebar-content :global(.place-list) {
+    flex: 1;
+  }
+  .sidebar-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.7rem;
+    border-top: 1px solid var(--line);
+    background: var(--cream);
+  }
+  .sidebar-footer a,
+  .sidebar-footer button {
+    min-height: 2.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    border: 0;
+    border-radius: 0.7rem;
+    padding: 0.65rem 0.75rem;
+    background: transparent;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 750;
+  }
+  .sidebar-footer a:hover,
+  .sidebar-footer button:hover {
+    background: var(--surface-muted);
+    color: var(--green-800);
+  }
+  .sidebar-footer .settings {
+    flex: 1;
+  }
+  .sidebar-footer form {
+    margin: 0;
+  }
+  .floating-header {
+    position: absolute;
+    z-index: 800;
+    top: 0.75rem;
+    left: 0.75rem;
+    min-height: auto;
+    border: 1px solid var(--line);
+    border-radius: 0.85rem;
+    padding: 0.35rem;
+    box-shadow: 0 8px 24px var(--shadow-panel);
+  }
+  .floating-header .brand {
+    padding-right: 0.55rem;
+  }
+  .mobile-launcher {
+    display: none;
+  }
+  .sidebar-backdrop {
+    display: none;
   }
   .map-pane {
     position: relative;
@@ -316,7 +450,7 @@
     position: absolute;
     z-index: 500;
     left: 50%;
-    bottom: 1.1rem;
+    bottom: 1.25rem;
     transform: translateX(-50%);
     border: 1px solid #ffffffbb;
     border-radius: 999px;
@@ -343,9 +477,6 @@
     place-items: center;
     color: var(--ink-muted);
   }
-  .mobile-nav {
-    display: none;
-  }
   .toast {
     position: fixed;
     z-index: 2000;
@@ -367,28 +498,47 @@
     }
   }
   @media (max-width: 760px) {
-    .app-shell {
-      grid-template-rows: 3.55rem minmax(0, 1fr) 3.6rem;
-    }
-    .topbar {
-      padding-left: 0.75rem;
-    }
-    .topbar nav {
-      display: none;
-    }
-    .add {
-      margin-left: auto;
-    }
     main {
       display: block;
-      min-height: 0;
     }
-    .sidebar,
+    .sidebar {
+      position: fixed;
+      z-index: 1100;
+      inset: 0 auto 0 0;
+      width: min(380px, calc(100vw - 3rem));
+      visibility: hidden;
+      transform: translateX(-100%);
+      box-shadow: 16px 0 38px var(--shadow-panel);
+    }
+    main.collapsed .sidebar {
+      visibility: hidden;
+      transform: translateX(-100%);
+    }
+    main.drawer-open .sidebar,
+    main.collapsed.drawer-open .sidebar {
+      visibility: visible;
+      transform: translateX(0);
+    }
+    .desktop-launcher {
+      display: none;
+    }
+    .mobile-launcher {
+      display: flex;
+    }
+    .sidebar-backdrop {
+      position: fixed;
+      z-index: 1000;
+      inset: 0;
+      display: block;
+      border: 0;
+      background: #07130c66;
+      cursor: default;
+    }
     .map-pane {
       position: absolute;
       inset: 0;
     }
-    .mobile-hidden {
+    .map-hint {
       display: none;
     }
     .panel {
@@ -405,34 +555,9 @@
       overflow: hidden;
       box-shadow: 0 -16px 38px var(--shadow-panel);
     }
-    .mobile-nav {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      border-top: 1px solid var(--line);
-      background: var(--cream);
-    }
-    .mobile-nav button {
-      display: grid;
-      justify-items: center;
-      align-content: center;
-      gap: 0.1rem;
-      border: 0;
-      background: transparent;
-      color: var(--ink-muted);
-      font-size: 0.65rem;
-      font-weight: 700;
-    }
-    .mobile-nav button.active {
-      color: var(--green-800);
-    }
-  }
-  @media (max-width: 430px) {
     .add {
-      width: 2.5rem;
-      height: 2.5rem;
-      justify-content: center;
-      padding: 0;
-      font-size: 0;
+      right: 1rem;
+      bottom: 2rem;
     }
   }
 </style>
