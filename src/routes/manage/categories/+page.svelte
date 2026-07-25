@@ -1,9 +1,12 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { tick } from 'svelte';
+  import type { SubmitFunction } from '@sveltejs/kit';
   import {
     AlertTriangle,
     CheckCircle2,
     ChevronDown,
+    GripVertical,
     LockKeyhole,
     MapPinned,
     Pencil,
@@ -20,6 +23,15 @@
   let newColor = $state('#26734C');
   let draftIcons = $state<Record<string, string>>({});
   let draftColors = $state<Record<string, string>>({});
+  let orderedCategories = $state<typeof data.categories>([]);
+  let draggedId = $state<string | null>(null);
+  let dragStartOrder = $state<typeof data.categories>([]);
+  let dragWasDropped = $state(false);
+  let savingOrder = $state(false);
+  let pendingPreviousOrder = $state<typeof data.categories>([]);
+  let orderValue = $state('');
+  let reorderForm: HTMLFormElement;
+  let serverCategorySignature = $state('');
 
   const iconLabel = (name: string) =>
     name
@@ -36,6 +48,98 @@
         total + (category.placeCount ?? 0),
       0
     );
+
+  $effect(() => {
+    const signature = JSON.stringify(
+      data.categories.map((category: (typeof data.categories)[number]) => [
+        category.id,
+        category.name,
+        category.iconName,
+        category.color,
+        category.sortOrder,
+        category.placeCount
+      ])
+    );
+    if (signature !== serverCategorySignature && !draggedId && !savingOrder) {
+      serverCategorySignature = signature;
+      orderedCategories = [...data.categories];
+    }
+  });
+
+  const enhanceOrder: SubmitFunction = () => {
+    savingOrder = true;
+    return async ({ result, update }) => {
+      if (result.type !== 'success') orderedCategories = [...pendingPreviousOrder];
+      await update({ reset: false });
+      savingOrder = false;
+    };
+  };
+
+  function moveDraggedCategory(event: DragEvent, targetId: string) {
+    event.preventDefault();
+    if (!draggedId || draggedId === targetId) return;
+
+    const sourceIndex = orderedCategories.findIndex((category) => category.id === draggedId);
+    const targetIndex = orderedCategories.findIndex((category) => category.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    const target = event.currentTarget as HTMLElement;
+    const insertAfter =
+      event.clientY > target.getBoundingClientRect().top + target.offsetHeight / 2;
+    let destinationIndex = targetIndex + (insertAfter ? 1 : 0);
+    const next = [...orderedCategories];
+    const [dragged] = next.splice(sourceIndex, 1);
+    if (sourceIndex < destinationIndex) destinationIndex -= 1;
+    next.splice(destinationIndex, 0, dragged);
+    orderedCategories = next;
+  }
+
+  function startDragging(event: DragEvent, id: string) {
+    if (savingOrder) {
+      event.preventDefault();
+      return;
+    }
+    draggedId = id;
+    dragStartOrder = [...orderedCategories];
+    dragWasDropped = false;
+    event.dataTransfer?.setData('text/plain', id);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+  }
+
+  function commitOrder(previousOrder: typeof data.categories) {
+    if (savingOrder) return;
+    pendingPreviousOrder = [...previousOrder];
+    orderValue = JSON.stringify(orderedCategories.map((category) => category.id));
+    void tick().then(() => reorderForm.requestSubmit());
+  }
+
+  function dropCategory(event: DragEvent) {
+    event.preventDefault();
+    if (!draggedId) return;
+    dragWasDropped = true;
+    draggedId = null;
+    commitOrder(dragStartOrder);
+  }
+
+  function finishDragging() {
+    if (!dragWasDropped) orderedCategories = [...dragStartOrder];
+    draggedId = null;
+    dragWasDropped = false;
+  }
+
+  function moveWithKeyboard(event: KeyboardEvent, id: string) {
+    if (!['ArrowUp', 'ArrowDown'].includes(event.key) || savingOrder) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const currentIndex = orderedCategories.findIndex((category) => category.id === id);
+    const nextIndex = currentIndex + (event.key === 'ArrowUp' ? -1 : 1);
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= orderedCategories.length) return;
+    const previousOrder = [...orderedCategories];
+    const next = [...orderedCategories];
+    [next[currentIndex], next[nextIndex]] = [next[nextIndex], next[currentIndex]];
+    orderedCategories = next;
+    commitOrder(previousOrder);
+  }
 </script>
 
 <svelte:head><title>Categories · MapMe</title></svelte:head>
@@ -121,10 +225,6 @@
           <output>{newColor.toUpperCase()}</output>
         </span>
       </label>
-      <label class="order-field">
-        <span>Display order</span>
-        <input name="sortOrder" type="number" value="100" />
-      </label>
       <button type="submit" class="primary-button create-submit">
         <Plus size={17} /> Add category
       </button>
@@ -135,15 +235,48 @@
 <div class="section-heading">
   <div>
     <h2>Your categories</h2>
-    <p>Categories appear in this order in filters and place forms.</p>
+    <p>Drag categories into the order you want them to appear across MapMe.</p>
   </div>
-  <span>{data.categories.length} total</span>
+  <span class:saving={savingOrder}>
+    <GripVertical size={14} />
+    {savingOrder ? 'Saving order…' : 'Drag to reorder'}
+  </span>
 </div>
 
+<form
+  class="reorder-form"
+  method="POST"
+  action="?/reorder"
+  use:enhance={enhanceOrder}
+  bind:this={reorderForm}
+  aria-hidden="true"
+>
+  <input type="hidden" name="order" value={orderValue} />
+</form>
+
 <section class="category-list" aria-label="Your categories">
-  {#each data.categories as category}
-    <details class="category-card">
+  {#each orderedCategories as category (category.id)}
+    <details
+      class:dragging={draggedId === category.id}
+      class="category-card"
+      ondragover={(event) => moveDraggedCategory(event, category.id)}
+      ondrop={dropCategory}
+    >
       <summary>
+        <span
+          class="drag-handle"
+          draggable={!savingOrder}
+          role="button"
+          tabindex="0"
+          aria-label={`Drag to reorder ${category.name}. Use arrow keys to move it.`}
+          title="Drag to reorder"
+          ondragstart={(event) => startDragging(event, category.id)}
+          ondragend={finishDragging}
+          onkeydown={(event) => moveWithKeyboard(event, category.id)}
+          onclick={(event) => event.preventDefault()}
+        >
+          <GripVertical size={19} />
+        </span>
         <span class="marker-preview" style:background={categoryColor(category.id, category.color)}>
           {@html categoryIconSvg(categoryIcon(category.id, category.iconName))}
         </span>
@@ -158,8 +291,6 @@
             <span>{placeLabel(category.placeCount ?? 0)}</span>
             <span aria-hidden="true">·</span>
             <span>{iconLabel(category.iconName)}</span>
-            <span aria-hidden="true">·</span>
-            <span>Order {category.sortOrder}</span>
           </span>
         </span>
         <span class="edit-affordance"><Pencil size={15} /> Edit <ChevronDown size={16} /></span>
@@ -168,6 +299,7 @@
       <div class="editor">
         <form method="POST" action="?/save" use:enhance class="edit-form">
           <input type="hidden" name="id" value={category.id} />
+          <input type="hidden" name="sortOrder" value={category.sortOrder} />
           <label class="name-field">
             <span>Name</span>
             <input name="name" value={category.name} required maxlength="80" />
@@ -200,10 +332,6 @@
               />
               <output>{categoryColor(category.id, category.color).toUpperCase()}</output>
             </span>
-          </label>
-          <label class="order-field">
-            <span>Display order</span>
-            <input name="sortOrder" type="number" value={category.sortOrder} />
           </label>
           <button type="submit" class="primary-button save-button">
             <Save size={16} /> Save changes
@@ -410,7 +538,9 @@
   .create-form,
   .edit-form {
     display: grid;
-    grid-template-columns: minmax(180px, 1.5fr) minmax(145px, 1fr) minmax(135px, 0.9fr) 110px auto;
+    grid-template-columns:
+      minmax(180px, 1.5fr) minmax(145px, 1fr) minmax(135px, 0.9fr)
+      auto;
     align-items: end;
     gap: 0.75rem;
   }
@@ -475,9 +605,18 @@
     font-size: 1rem;
   }
   .section-heading > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     color: var(--ink-muted);
     font-size: 0.72rem;
     font-weight: 750;
+  }
+  .section-heading > span.saving {
+    color: var(--green-700);
+  }
+  .reorder-form {
+    display: none;
   }
   .category-list {
     display: grid;
@@ -498,6 +637,11 @@
     border-color: color-mix(in srgb, var(--green-700) 35%, var(--line));
     box-shadow: 0 6px 20px var(--shadow-soft);
   }
+  .category-card.dragging {
+    border-color: var(--green-700);
+    opacity: 0.55;
+    box-shadow: 0 10px 28px var(--shadow-panel);
+  }
   .category-card > summary {
     min-height: 4.65rem;
     display: flex;
@@ -517,6 +661,25 @@
     display: grid;
     flex: 1;
     gap: 0.25rem;
+  }
+  .drag-handle {
+    width: 1.65rem;
+    height: 2.4rem;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 0.45rem;
+    color: var(--ink-muted);
+    cursor: grab;
+    touch-action: none;
+  }
+  .drag-handle:hover,
+  .drag-handle:focus-visible {
+    background: var(--surface-muted);
+    color: var(--green-700);
+  }
+  .drag-handle:active {
+    cursor: grabbing;
   }
   .category-name {
     display: flex;
@@ -653,7 +816,7 @@
   @media (max-width: 900px) {
     .create-form,
     .edit-form {
-      grid-template-columns: 1.4fr 1fr 1fr 100px;
+      grid-template-columns: 1.4fr 1fr 1fr;
     }
     .create-submit,
     .save-button {

@@ -1,14 +1,22 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { categoryDeleteSchema, categorySchema } from '$lib/schemas/category';
+import { categoryDeleteSchema, categoryOrderSchema, categorySchema } from '$lib/schemas/category';
 import { listCategories } from '$lib/server/db/queries/categories';
-import { deleteCategory, saveCategory } from '$lib/server/services/categories';
+import { deleteCategory, reorderCategories, saveCategory } from '$lib/server/services/categories';
 
 export const load: PageServerLoad = () => ({ categories: listCategories() });
 
 export const actions = {
   save: async ({ request }) => {
     const form = Object.fromEntries(await request.formData());
+    if (!form.id && form.sortOrder === undefined) {
+      const categories = listCategories();
+      form.sortOrder = String(
+        categories.length > 0
+          ? Math.max(...categories.map((category) => category.sortOrder)) + 10
+          : 0
+      );
+    }
     const parsed = categorySchema.safeParse(form);
     if (!parsed.success)
       return fail(400, { message: 'Check the category fields.', issues: parsed.error.issues });
@@ -33,6 +41,25 @@ export const actions = {
     } catch (error) {
       return fail(400, {
         message: error instanceof Error ? error.message : 'Could not delete category'
+      });
+    }
+  },
+  reorder: async ({ request }) => {
+    const form = Object.fromEntries(await request.formData());
+    let order: unknown;
+    try {
+      order = JSON.parse(String(form.order));
+    } catch {
+      return fail(400, { message: 'Could not read the category order.' });
+    }
+    const parsed = categoryOrderSchema.safeParse(order);
+    if (!parsed.success) return fail(400, { message: 'Choose a valid category order.' });
+    try {
+      reorderCategories(parsed.data);
+      return { success: true, message: 'Category order saved.' };
+    } catch (error) {
+      return fail(400, {
+        message: error instanceof Error ? error.message : 'Could not reorder categories'
       });
     }
   }

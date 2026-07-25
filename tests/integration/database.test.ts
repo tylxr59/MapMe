@@ -86,6 +86,19 @@ describe('database and place CRUD', () => {
     expect(getPlace(created.id)).toBeNull();
   });
 
+  it('reorders every category as one atomic list', async () => {
+    const { listCategories } = await import('$lib/server/db/queries/categories');
+    const { reorderCategories } = await import('$lib/server/services/categories');
+    const original = listCategories();
+    const reversedIds = original.map((category) => category.id).reverse();
+
+    reorderCategories(reversedIds);
+    expect(listCategories().map((category) => category.id)).toEqual(reversedIds);
+    expect(() => reorderCategories(reversedIds.slice(1))).toThrow('Category order is incomplete');
+
+    reorderCategories(original.map((category) => category.id));
+  });
+
   it('stores only session token hashes and supports revocation', async () => {
     const { getDatabase } = await import('$lib/server/db/driver');
     const { createSession, deleteSession, sha256, validateSession } =

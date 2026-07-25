@@ -68,3 +68,23 @@ export function deleteCategory(id: string, replacementId: string): void {
     database.prepare('DELETE FROM categories WHERE id = ?').run(id);
   });
 }
+
+export function reorderCategories(ids: string[]): void {
+  transaction((database) => {
+    const existing = database
+      .prepare('SELECT id FROM categories')
+      .all()
+      .map((row) => (row as { id: string }).id);
+    if (ids.length !== existing.length || new Set(ids).size !== existing.length) {
+      throw new Error('Category order is incomplete');
+    }
+    const existingIds = new Set(existing);
+    if (ids.some((id) => !existingIds.has(id))) throw new Error('Unknown category');
+
+    const update = database.prepare(
+      'UPDATE categories SET sort_order = ?, updated_at = ? WHERE id = ?'
+    );
+    const now = new Date().toISOString();
+    ids.forEach((id, index) => update.run(index * 10, now, id));
+  });
+}
