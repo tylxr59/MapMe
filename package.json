@@ -1,0 +1,70 @@
+{
+  "name": "mapme",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.15.0 <25"
+  },
+  "overrides": {
+    "cookie": "0.7.2"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node scripts/startup.mjs",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "hash-password": "node scripts/hash-password.mjs"
+  },
+  "dependencies": {
+    "@sveltejs/adapter-node": "5.5.7",
+    "archiver": "8.0.0",
+    "argon2": "0.45.1",
+    "busboy": "1.6.0",
+    "csv-parse": "7.0.1",
+    "csv-stringify": "6.8.1",
+    "file-type": "22.0.1",
+    "ipaddr.js": "2.4.0",
+    "leaflet": "1.9.4",
+    "leaflet.markercluster": "1.5.3",
+    "lucide-static": "1.26.0",
+    "@lucide/svelte": "1.26.0",
+    "sanitize-html": "2.17.6",
+    "saxes": "6.0.0",
+    "sharp": "0.35.3",
+    "yauzl": "3.4.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.62.0",
+    "@sveltejs/kit": "2.70.1",
+    "@sveltejs/vite-plugin-svelte": "7.0.0",
+    "@types/archiver": "7.0.0",
+    "@types/busboy": "1.5.4",
+    "@types/leaflet": "1.9.21",
+    "@types/leaflet.markercluster": "1.5.6",
+    "@types/node": "24.10.9",
+    "@types/sanitize-html": "2.16.1",
+    "@types/yauzl": "2.10.3",
+    "eslint": "10.8.0",
+    "eslint-plugin-svelte": "3.22.0",
+    "globals": "17.4.0",
+    "prettier": "3.9.6",
+    "prettier-plugin-svelte": "4.1.1",
+    "svelte": "5.56.8",
+    "svelte-check": "4.4.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.65.0",
+    "vite": "8.1.5",
+    "vitest": "4.1.10"
+  }
+}

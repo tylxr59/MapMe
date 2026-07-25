@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ORIGIN: http://127.0.0.1:4173
+      AUTH_MODE: none
+      DATABASE_PATH: /tmp/mapme-ci/database.sqlite
+      UPLOAD_PATH: /tmp/mapme-ci/uploads
+      BACKUP_PATH: /tmp/mapme-ci/backups
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - run: npm ci --include=optional
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - run: docker build --tag mapme:ci .
+      - name: Container smoke test
+        run: |
+          mkdir -p "${RUNNER_TEMP}/mapme-ci-data"
+          docker run -d --name mapme-ci \
+            -e ORIGIN=http://127.0.0.1:3000 \
+            -p 3000:3000 \
+            -v "${RUNNER_TEMP}/mapme-ci-data:/data" \
+            mapme:ci
+          for attempt in $(seq 1 30); do
+            status="$(docker inspect --format='{{.State.Health.Status}}' mapme-ci)"
+            [ "$status" = healthy ] && break
+            [ "$status" = unhealthy ] && docker logs mapme-ci && exit 1
+            sleep 2
+          done
+          test "$(docker inspect --format='{{.State.Health.Status}}' mapme-ci)" = healthy
+          curl --fail http://127.0.0.1:3000/healthz
+          test -f "${RUNNER_TEMP}/mapme-ci-data/database.sqlite"
+          docker restart mapme-ci
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://127.0.0.1:3000/healthz && break
+            sleep 2
+          done
+          curl --fail http://127.0.0.1:3000/healthz
