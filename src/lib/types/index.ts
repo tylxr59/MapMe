@@ -9,6 +9,7 @@ export interface CategoryDTO {
   color: string;
   sortOrder: number;
   isSystem: boolean;
+  placeCount?: number;
 }
 
 export interface TagDTO {

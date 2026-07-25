@@ -253,6 +253,8 @@
   }
   .map-pane {
     position: relative;
+    z-index: 0;
+    isolation: isolate;
     min-width: 0;
     min-height: 0;
   }

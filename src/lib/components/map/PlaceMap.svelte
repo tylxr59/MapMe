@@ -58,8 +58,7 @@
   }
 
   function markerHtml(place: MapPlace): string {
-    const icon = place.category.iconName === 'map-pin' ? '' : place.category.iconSvg;
-    return `<div class="mapme-marker" style="background:${place.category.color}">${icon}</div>`;
+    return `<div class="mapme-marker" style="background:${place.category.color}">${place.category.iconSvg}</div>`;
   }
 
   function refreshMarkers() {
@@ -100,7 +99,7 @@
           draggable: true,
           zIndexOffset: 1000,
           icon: leaflet.divIcon({
-            html: '<div class="mapme-marker mapme-draft-marker"><span>+</span></div>',
+            html: '<div class="mapme-marker mapme-draft-marker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></div>',
             className: '',
             iconSize: [34, 34],
             iconAnchor: [17, 34]

@@ -30,7 +30,7 @@ describe('database and place CRUD', () => {
       .get() as {
       version: number;
     };
-    expect(version.version).toBe(5);
+    expect(version.version).toBe(6);
     expect(
       (database.prepare('PRAGMA journal_mode').get() as { journal_mode: string }).journal_mode
     ).toBe('wal');
@@ -38,6 +38,13 @@ describe('database and place CRUD', () => {
       (database.prepare('SELECT count(*) AS count FROM categories').get() as { count: number })
         .count
     ).toBe(8);
+    expect(
+      (
+        database
+          .prepare("SELECT icon_name FROM categories WHERE normalized_name = 'other'")
+          .get() as { icon_name: string }
+      ).icon_name
+    ).toBe('pin');
   });
 
   it('creates, searches, updates, and deletes a place', async () => {
@@ -98,7 +105,7 @@ describe('database and place CRUD', () => {
     const { createBackup, backupPath } = await import('$lib/server/backup/create');
     const { inspectRestore } = await import('$lib/server/backup/restore');
     const created = await createBackup();
-    expect(created.manifest.schemaVersion).toBe(5);
+    expect(created.manifest.schemaVersion).toBe(6);
     const archive = readFileSync(backupPath(created.id));
     const inspection = await inspectRestore(
       new File([archive], created.filename, { type: 'application/zip' })

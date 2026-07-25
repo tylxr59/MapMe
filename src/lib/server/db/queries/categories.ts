@@ -10,6 +10,7 @@ interface CategoryRow {
   color: string;
   sort_order: number;
   is_system: number;
+  place_count?: number;
 }
 
 export function mapCategory(row: CategoryRow): CategoryDTO {
@@ -20,16 +21,19 @@ export function mapCategory(row: CategoryRow): CategoryDTO {
     iconSvg: categoryIconSvg(row.icon_name),
     color: row.color,
     sortOrder: row.sort_order,
-    isSystem: row.is_system === 1
+    isSystem: row.is_system === 1,
+    placeCount: row.place_count
   };
 }
 
 export function listCategories(database: DatabaseSync = getDatabase()): CategoryDTO[] {
   const rows = database
     .prepare(
-      `SELECT id, name, icon_name, color, sort_order, is_system
-       FROM categories
-       ORDER BY sort_order, name COLLATE NOCASE`
+      `SELECT
+         c.id, c.name, c.icon_name, c.color, c.sort_order, c.is_system,
+         (SELECT count(*) FROM places p WHERE p.category_id = c.id) AS place_count
+       FROM categories c
+       ORDER BY c.sort_order, c.name COLLATE NOCASE`
     )
     .all() as unknown as CategoryRow[];
   return rows.map(mapCategory);

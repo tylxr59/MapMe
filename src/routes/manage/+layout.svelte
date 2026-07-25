@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import { ArrowLeft, Database, Shapes, Tags } from '@lucide/svelte';
   let { children } = $props();
 </script>
@@ -8,9 +9,21 @@
     <a href="/" class="back"><ArrowLeft size={18} /> Back to map</a>
     <strong>Manage MapMe</strong>
     <nav>
-      <a href="/manage/categories"><Shapes size={16} /> Categories</a>
-      <a href="/manage/tags"><Tags size={16} /> Tags</a>
-      <a href="/manage/data"><Database size={16} /> Data</a>
+      <a
+        href="/manage/categories"
+        aria-current={page.url.pathname.startsWith('/manage/categories') ? 'page' : undefined}
+        ><Shapes size={16} /> Categories</a
+      >
+      <a
+        href="/manage/tags"
+        aria-current={page.url.pathname.startsWith('/manage/tags') ? 'page' : undefined}
+        ><Tags size={16} /> Tags</a
+      >
+      <a
+        href="/manage/data"
+        aria-current={page.url.pathname.startsWith('/manage/data') ? 'page' : undefined}
+        ><Database size={16} /> Data</a
+      >
     </nav>
   </header>
   <main>{@render children()}</main>
@@ -59,6 +72,10 @@
   }
   nav a:hover {
     background: var(--surface-muted);
+    color: var(--green-800);
+  }
+  nav a[aria-current='page'] {
+    background: var(--surface-selected);
     color: var(--green-800);
   }
   main {

@@ -187,11 +187,6 @@ a {
 }
 .mapme-draft-marker {
   background: var(--orange-500);
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-.mapme-draft-marker > span {
-  transform: rotate(45deg);
 }
 .marker-cluster-small div,
 .marker-cluster-medium div,

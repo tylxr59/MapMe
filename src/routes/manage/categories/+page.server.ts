@@ -14,7 +14,10 @@ export const actions = {
       return fail(400, { message: 'Check the category fields.', issues: parsed.error.issues });
     try {
       saveCategory(parsed.data);
-      return { success: true };
+      return {
+        success: true,
+        message: parsed.data.id ? 'Category changes saved.' : 'Category added.'
+      };
     } catch (error) {
       return fail(400, {
         message: error instanceof Error ? error.message : 'Could not save category'
@@ -26,7 +29,7 @@ export const actions = {
     if (!parsed.success) return fail(400, { message: 'Choose a valid replacement category.' });
     try {
       deleteCategory(parsed.data.id, parsed.data.replacementId);
-      return { success: true };
+      return { success: true, message: 'Category deleted and its places reassigned.' };
     } catch (error) {
       return fail(400, {
         message: error instanceof Error ? error.message : 'Could not delete category'

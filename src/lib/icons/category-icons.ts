@@ -4,7 +4,7 @@ type IconNode = [string, Record<string, string>];
 const icons = iconNodes as unknown as Record<string, IconNode[]>;
 
 export const suggestedCategoryIcons = [
-  'map-pin',
+  'pin',
   'utensils',
   'footprints',
   'coffee',
@@ -39,7 +39,7 @@ export function isValidCategoryIcon(name: string): boolean {
 }
 
 export function categoryIconSvg(name: string): string {
-  const nodes = icons[name] ?? icons['map-pin'];
+  const nodes = icons[name] ?? icons['pin'];
   const body = nodes
     .map(([element, attributes]) => {
       const safeElement = [
