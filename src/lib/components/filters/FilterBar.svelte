@@ -113,15 +113,18 @@
     gap: 0.45rem;
     min-height: 2.65rem;
     padding: 0 0.65rem;
-    border: 1px solid #cbd3cb;
+    border: 1px solid var(--input-border);
     border-radius: 0.75rem;
-    background: white;
+    background: var(--input-bg);
+    color: var(--text);
   }
   .search-row input {
     min-width: 0;
     flex: 1;
     border: 0;
     outline: 0;
+    background: transparent;
+    color: var(--text);
   }
   .filter-toggle {
     display: flex;
@@ -143,15 +146,15 @@
     gap: 0.25rem;
     font-size: 0.72rem;
     font-weight: 700;
-    color: #59645d;
+    color: var(--text-secondary);
   }
   select {
     width: 100%;
     padding: 0.52rem;
-    border: 1px solid #cbd3cb;
+    border: 1px solid var(--input-border);
     border-radius: 0.5rem;
-    background: white;
-    color: #26332b;
+    background: var(--input-bg);
+    color: var(--text);
   }
   .check {
     display: flex;
@@ -177,8 +180,8 @@
   .actions button {
     border: 0;
     border-radius: 0.55rem;
-    background: var(--green-800);
-    color: white;
+    background: var(--accent-bg);
+    color: var(--accent-text);
     padding: 0.55rem 0.75rem;
     font-weight: 700;
   }

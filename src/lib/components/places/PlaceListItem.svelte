@@ -40,7 +40,7 @@
   }
   .place-row:hover,
   .place-row.selected {
-    background: #e8f1e9;
+    background: var(--surface-selected);
   }
   .category-dot {
     width: 2.2rem;

@@ -87,7 +87,7 @@
     border-radius: 0.85rem;
     background: var(--cream);
     padding: 1rem;
-    box-shadow: 0 4px 18px #1c35230a;
+    box-shadow: 0 4px 18px var(--shadow-soft);
   }
   .new {
     margin-bottom: 1rem;
@@ -108,17 +108,18 @@
   label {
     display: grid;
     gap: 0.25rem;
-    color: #566159;
+    color: var(--text-secondary);
     font-size: 0.7rem;
     font-weight: 750;
   }
   input,
   select {
     min-height: 2.35rem;
-    border: 1px solid #c9d2ca;
+    border: 1px solid var(--input-border);
     border-radius: 0.5rem;
     padding: 0.45rem 0.55rem;
-    background: white;
+    background: var(--input-bg);
+    color: var(--text);
   }
   input[type='color'] {
     width: 3.5rem;
@@ -128,8 +129,8 @@
     min-height: 2.35rem;
     border: 0;
     border-radius: 0.5rem;
-    background: var(--green-800);
-    color: white;
+    background: var(--accent-bg);
+    color: var(--accent-text);
     padding: 0.5rem 0.75rem;
     font-weight: 750;
   }
@@ -160,7 +161,7 @@
     display: flex;
     align-items: center;
     gap: 0.3rem;
-    background: #f1e7e4;
+    background: var(--danger-soft);
     color: var(--danger);
   }
   small {
@@ -171,8 +172,8 @@
   .alert {
     padding: 0.7rem;
     border-radius: 0.5rem;
-    background: #f7dfdb;
-    color: #7e2820;
+    background: var(--danger-bg);
+    color: var(--danger-text);
   }
   @media (max-width: 800px) {
     .edit-form {

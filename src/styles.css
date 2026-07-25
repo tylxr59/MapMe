@@ -3,6 +3,7 @@
 @import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
 :root {
+  color-scheme: light dark;
   font-family:
     Inter,
     ui-sans-serif,
@@ -11,18 +12,84 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  color: #17221c;
-  background: #f4f1e9;
   font-synthesis: none;
+  color: var(--text);
+  background: var(--paper);
+  --text: #17221c;
+  --text-secondary: #4e5b53;
   --green-900: #133c29;
   --green-800: #1b5e3c;
   --green-700: #26734c;
   --green-100: #dcebdc;
+  --accent-bg: #1b5e3c;
+  --accent-text: #ffffff;
+  --orange-500: #c95f2b;
   --cream: #fffdf8;
   --paper: #f4f1e9;
+  --surface-raised: #ffffff;
+  --surface-muted: #edf1ec;
+  --surface-selected: #e8f1e9;
+  --input-bg: #ffffff;
+  --input-border: #c9d2ca;
+  --badge-bg: #e6eee7;
+  --badge-text: #24543a;
   --ink-muted: #687169;
   --line: #dce1da;
   --danger: #a4382d;
+  --danger-soft: #f1e7e4;
+  --danger-bg: #f7dfdb;
+  --danger-text: #7e2820;
+  --warning-bg: #fff4d8;
+  --warning-border: #e5bf75;
+  --warning-text: #6d4b0c;
+  --success-bg: #e3eee5;
+  --success-text: #24543a;
+  --map-bg: #dbe4db;
+  --map-tile-filter: none;
+  --header-translucent: #fffdf8ee;
+  --shadow-soft: #1d372414;
+  --shadow-panel: #13291c1f;
+  --focus-ring: #26734c1f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #edf4ef;
+    --text-secondary: #b5c0b8;
+    --green-900: #d7f4df;
+    --green-800: #72d49b;
+    --green-700: #64c98e;
+    --green-100: #193c2a;
+    --accent-bg: #28754c;
+    --accent-text: #ffffff;
+    --orange-500: #e17a43;
+    --cream: #141a17;
+    --paper: #0d1210;
+    --surface-raised: #1a211d;
+    --surface-muted: #202a24;
+    --surface-selected: #20372a;
+    --input-bg: #171e1a;
+    --input-border: #3a4940;
+    --badge-bg: #203b2c;
+    --badge-text: #9de1b6;
+    --ink-muted: #96a299;
+    --line: #2c3931;
+    --danger: #ff8f82;
+    --danger-soft: #3b2422;
+    --danger-bg: #4a2825;
+    --danger-text: #ffb0a6;
+    --warning-bg: #3a301b;
+    --warning-border: #705d2b;
+    --warning-text: #f3d68b;
+    --success-bg: #1d3526;
+    --success-text: #9de1b6;
+    --map-bg: #18211c;
+    --map-tile-filter: brightness(0.7) contrast(1.18) saturate(0.72);
+    --header-translucent: #141a17ee;
+    --shadow-soft: #00000045;
+    --shadow-panel: #00000055;
+    --focus-ring: #72d49b30;
+  }
 }
 
 * {
@@ -35,12 +102,25 @@ body {
 }
 body {
   min-width: 320px;
+  color: var(--text);
+  background: var(--paper);
 }
 button,
 input,
 select,
 textarea {
   font: inherit;
+  color: inherit;
+}
+input,
+select,
+textarea {
+  accent-color: var(--accent-bg);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-muted);
+  opacity: 1;
 }
 button {
   cursor: pointer;
@@ -61,7 +141,29 @@ a {
 }
 .leaflet-container {
   font-family: inherit;
-  background: #dbe4db;
+  background: var(--map-bg);
+  color: var(--text);
+}
+.leaflet-tile-pane {
+  filter: var(--map-tile-filter);
+}
+.leaflet-control-zoom a,
+.leaflet-control-attribution {
+  border-color: var(--line) !important;
+  background: var(--surface-raised) !important;
+  color: var(--text-secondary) !important;
+}
+.leaflet-control-zoom a:hover {
+  background: var(--surface-muted) !important;
+}
+.leaflet-tooltip {
+  border-color: var(--line);
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: 0 2px 8px var(--shadow-soft);
+}
+.leaflet-tooltip-top::before {
+  border-top-color: var(--surface-raised);
 }
 .leaflet-div-icon {
   background: transparent;
@@ -94,11 +196,11 @@ a {
 .marker-cluster-small div,
 .marker-cluster-medium div,
 .marker-cluster-large div {
-  background: var(--green-800);
-  color: white;
+  background: var(--accent-bg);
+  color: var(--accent-text);
 }
 .marker-cluster-small,
 .marker-cluster-medium,
 .marker-cluster-large {
-  background: #1b5e3c55;
+  background: color-mix(in srgb, var(--accent-bg) 35%, transparent);
 }

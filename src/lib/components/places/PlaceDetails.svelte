@@ -246,8 +246,8 @@
     align-items: center;
     gap: 0.25rem;
     border-radius: 999px;
-    background: #e6eee7;
-    color: #24543a;
+    background: var(--badge-bg);
+    color: var(--badge-text);
     padding: 0.35rem 0.55rem;
     font-size: 0.72rem;
     font-weight: 700;
@@ -261,7 +261,7 @@
     display: flex;
     align-items: flex-start;
     gap: 0.55rem;
-    color: #4e5b53;
+    color: var(--text-secondary);
     font-size: 0.85rem;
     line-height: 1.4;
   }
@@ -322,7 +322,7 @@
     gap: 0.3rem;
     border: 0;
     border-radius: 0.5rem;
-    background: #e5ede6;
+    background: var(--surface-muted);
     color: var(--green-800);
     padding: 0.5rem 0.65rem;
     font-size: 0.75rem;
@@ -357,16 +357,16 @@
     border-radius: 0.6rem;
     padding: 0.65rem 0.8rem;
     font-weight: 750;
-    color: #555;
-    background: #eceeea;
+    color: var(--text-secondary);
+    background: var(--surface-muted);
   }
   footer .edit {
     margin-left: auto;
-    background: var(--green-800);
-    color: white;
+    background: var(--accent-bg);
+    color: var(--accent-text);
   }
   footer .confirm {
     background: var(--danger);
-    color: white;
+    color: var(--accent-text);
   }
 </style>

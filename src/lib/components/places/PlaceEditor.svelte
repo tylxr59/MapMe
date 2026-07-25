@@ -316,7 +316,7 @@
     align-items: start;
     padding: 1rem 1.1rem;
     border-bottom: 1px solid var(--line);
-    background: #fffdf8ee;
+    background: var(--header-translucent);
     backdrop-filter: blur(10px);
   }
   header span {
@@ -333,7 +333,7 @@
   .icon-button {
     border: 0;
     background: transparent;
-    color: #59645d;
+    color: var(--text-secondary);
     padding: 0.35rem;
   }
   form {
@@ -346,7 +346,7 @@
     display: grid;
     align-content: start;
     gap: 0.3rem;
-    color: #4e5b53;
+    color: var(--text-secondary);
     font-size: 0.75rem;
     font-weight: 750;
   }
@@ -354,18 +354,18 @@
   select,
   textarea {
     width: 100%;
-    border: 1px solid #c9d2ca;
+    border: 1px solid var(--input-border);
     border-radius: 0.58rem;
     padding: 0.63rem 0.7rem;
-    background: white;
-    color: #1d2b22;
+    background: var(--input-bg);
+    color: var(--text);
     outline: 0;
   }
   input:focus,
   select:focus,
   textarea:focus {
     border-color: var(--green-700);
-    box-shadow: 0 0 0 3px #26734c1f;
+    box-shadow: 0 0 0 3px var(--focus-ring);
   }
   textarea {
     resize: vertical;
@@ -395,9 +395,9 @@
     width: 2.5rem;
     height: 2.5rem;
     margin-bottom: 0.05rem;
-    border: 1px solid #c9d2ca;
+    border: 1px solid var(--input-border);
     border-radius: 0.58rem;
-    background: white;
+    background: var(--input-bg);
     color: var(--green-700);
   }
   .coordinate-lookup:disabled {
@@ -413,7 +413,7 @@
     padding: 0 0.25rem;
     font-size: 0.75rem;
     font-weight: 750;
-    color: #4e5b53;
+    color: var(--text-secondary);
   }
   .tag-grid {
     display: flex;
@@ -454,12 +454,12 @@
   }
   .primary,
   .search-box button {
-    background: var(--green-800);
-    color: white;
+    background: var(--accent-bg);
+    color: var(--accent-text);
   }
   .secondary {
-    background: #e8ece7;
-    color: #334139;
+    background: var(--surface-muted);
+    color: var(--text-secondary);
   }
   .search-box {
     display: flex;
@@ -482,13 +482,14 @@
   .geocode-results button {
     border: 0;
     border-bottom: 1px solid var(--line);
-    background: white;
+    background: var(--surface-raised);
+    color: var(--text);
     padding: 0.65rem;
     text-align: left;
     font-size: 0.78rem;
   }
   .geocode-results button:hover {
-    background: #edf4ed;
+    background: var(--surface-selected);
   }
   .geocode-results small {
     padding: 0.45rem 0.65rem;

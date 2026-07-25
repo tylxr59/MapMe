@@ -182,7 +182,7 @@
     padding: 0.55rem 0.8rem 0.55rem 1rem;
     border-bottom: 1px solid var(--line);
     background: var(--cream);
-    box-shadow: 0 1px 10px #1d372414;
+    box-shadow: 0 1px 10px var(--shadow-soft);
   }
   .brand {
     display: flex;
@@ -209,7 +209,7 @@
     border: 0;
     border-radius: 0.55rem;
     padding: 0 0.6rem;
-    color: #5b665e;
+    color: var(--text-secondary);
     background: transparent;
     text-decoration: none;
     font-size: 0.78rem;
@@ -217,7 +217,7 @@
   }
   .topbar nav a:hover,
   .topbar nav button:hover {
-    background: #edf1ec;
+    background: var(--surface-muted);
     color: var(--green-800);
   }
   .topbar nav form {
@@ -229,8 +229,8 @@
     gap: 0.35rem;
     border: 0;
     border-radius: 0.65rem;
-    background: var(--green-800);
-    color: white;
+    background: var(--accent-bg);
+    color: var(--accent-text);
     padding: 0.65rem 0.8rem;
     font-weight: 780;
   }
@@ -279,7 +279,7 @@
     bottom: 0;
     width: min(430px, 42vw);
     border-left: 1px solid var(--line);
-    box-shadow: -16px 0 38px #13291c1f;
+    box-shadow: -16px 0 38px var(--shadow-panel);
     background: var(--cream);
   }
   .panel.loading {
@@ -342,7 +342,7 @@
       border: 1px solid var(--line);
       border-radius: 1rem 1rem 0 0;
       overflow: hidden;
-      box-shadow: 0 -16px 38px #13291c29;
+      box-shadow: 0 -16px 38px var(--shadow-panel);
     }
     .mobile-nav {
       display: grid;
@@ -357,7 +357,7 @@
       gap: 0.1rem;
       border: 0;
       background: transparent;
-      color: #687169;
+      color: var(--ink-muted);
       font-size: 0.65rem;
       font-weight: 700;
     }

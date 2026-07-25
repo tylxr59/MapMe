@@ -104,16 +104,17 @@
   select {
     min-width: 0;
     flex: 1;
-    border: 1px solid #c9d2ca;
+    border: 1px solid var(--input-border);
     border-radius: 0.5rem;
     padding: 0.6rem;
-    background: white;
+    background: var(--input-bg);
+    color: var(--text);
   }
   button {
     border: 0;
     border-radius: 0.5rem;
-    background: var(--green-800);
-    color: white;
+    background: var(--accent-bg);
+    color: var(--accent-text);
     padding: 0.6rem 0.75rem;
     font-weight: 750;
   }
@@ -135,14 +136,14 @@
     white-space: nowrap;
   }
   .delete {
-    background: #f1e7e4;
+    background: var(--danger-soft);
     color: var(--danger);
   }
   .alert {
     padding: 0.7rem;
     border-radius: 0.5rem;
-    background: #f7dfdb;
-    color: #7e2820;
+    background: var(--danger-bg);
+    color: var(--danger-text);
   }
   @media (max-width: 650px) {
     .grid {

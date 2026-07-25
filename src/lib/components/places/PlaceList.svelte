@@ -51,7 +51,7 @@
     color: var(--ink-muted);
   }
   .empty strong {
-    color: #334039;
+    color: var(--text);
   }
   .empty span {
     font-size: 0.85rem;

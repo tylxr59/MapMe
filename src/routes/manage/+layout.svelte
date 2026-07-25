@@ -52,13 +52,13 @@
     gap: 0.3rem;
     border-radius: 0.5rem;
     padding: 0.55rem 0.65rem;
-    color: #59645d;
+    color: var(--text-secondary);
     text-decoration: none;
     font-size: 0.78rem;
     font-weight: 700;
   }
   nav a:hover {
-    background: #e9efe9;
+    background: var(--surface-muted);
     color: var(--green-800);
   }
   main {

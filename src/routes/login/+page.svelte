@@ -36,29 +36,30 @@
   :global(body) {
     margin: 0;
     font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-    background: #f4f1e9;
-    color: #17221c;
+    background: var(--paper);
+    color: var(--text);
   }
   .login-shell {
     min-height: 100vh;
     display: grid;
     place-items: center;
     padding: 1.5rem;
-    background: radial-gradient(circle at 20% 10%, #dcebdc 0, transparent 32%), #f4f1e9;
+    background:
+      radial-gradient(circle at 20% 10%, var(--green-100) 0, transparent 32%), var(--paper);
   }
   .login-card {
     width: min(100%, 25rem);
-    background: #fffdf8;
-    border: 1px solid #d9ded7;
+    background: var(--cream);
+    border: 1px solid var(--line);
     border-radius: 1.25rem;
     padding: 2rem;
-    box-shadow: 0 24px 60px #203b2a18;
+    box-shadow: 0 24px 60px var(--shadow-panel);
   }
   .brand {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    color: #1b5e3c;
+    color: var(--green-800);
     font-weight: 800;
   }
   h1 {
@@ -66,7 +67,7 @@
     font-size: 1.8rem;
   }
   p {
-    color: #5c665f;
+    color: var(--text-secondary);
     line-height: 1.5;
   }
   form {
@@ -82,10 +83,10 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border: 1px solid #b8c2ba;
+    border: 1px solid var(--input-border);
     border-radius: 0.7rem;
     padding: 0 0.8rem;
-    background: white;
+    background: var(--input-bg);
   }
   input {
     width: 100%;
@@ -93,19 +94,21 @@
     outline: 0;
     padding: 0.8rem 0;
     font: inherit;
+    background: transparent;
+    color: var(--text);
   }
   button {
     border: 0;
     border-radius: 0.7rem;
     padding: 0.8rem;
-    background: #1b5e3c;
-    color: white;
+    background: var(--accent-bg);
+    color: var(--accent-text);
     font: inherit;
     font-weight: 750;
     cursor: pointer;
   }
   .error {
-    color: #a32121;
+    color: var(--danger);
     margin: 0;
     font-size: 0.9rem;
   }
