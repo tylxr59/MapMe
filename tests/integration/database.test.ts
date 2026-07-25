@@ -20,7 +20,7 @@ afterAll(async () => {
 });
 
 describe('database and place CRUD', () => {
-  it('applies all migrations with WAL, FTS5, and seeds', async () => {
+  it('applies the v1 schema with WAL, FTS5, and seeds', async () => {
     const { initializeStorage } = await import('$lib/server/storage/paths');
     const { getDatabase } = await import('$lib/server/db/driver');
     await initializeStorage();
@@ -30,7 +30,7 @@ describe('database and place CRUD', () => {
       .get() as {
       version: number;
     };
-    expect(version.version).toBe(6);
+    expect(version.version).toBe(1);
     expect(
       (database.prepare('PRAGMA journal_mode').get() as { journal_mode: string }).journal_mode
     ).toBe('wal');
@@ -118,7 +118,7 @@ describe('database and place CRUD', () => {
     const { createBackup, backupPath } = await import('$lib/server/backup/create');
     const { inspectRestore } = await import('$lib/server/backup/restore');
     const created = await createBackup();
-    expect(created.manifest.schemaVersion).toBe(6);
+    expect(created.manifest.schemaVersion).toBe(1);
     const archive = readFileSync(backupPath(created.id));
     const inspection = await inspectRestore(
       new File([archive], created.filename, { type: 'application/zip' })
