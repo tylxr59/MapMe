@@ -1,5 +1,24 @@
 import { expect, test } from '@playwright/test';
 
+test('centers the initial map on the user location', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({ latitude: 42.3601, longitude: -71.0589 });
+  await page.goto('/');
+  await expect(page.locator('.leaflet-container')).toBeVisible();
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const saved = localStorage.getItem('mapme.viewport');
+        return saved ? JSON.parse(saved) : null;
+      })
+    )
+    .toMatchObject({
+      center: [42.3601, -71.0589],
+      zoom: 13
+    });
+});
+
 test('adds a place with direct coordinates and finds it in the list', async ({ page }) => {
   const placeName = `Playwright Lookout ${Date.now()}`;
   const browserErrors: string[] = [];

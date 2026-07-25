@@ -28,6 +28,35 @@
   let draftMarker: import('leaflet').Marker | null = null;
   let leaflet: typeof import('leaflet') | null = null;
 
+  function saveViewport() {
+    if (!map) return;
+    const point = map.getCenter();
+    localStorage.setItem(
+      'mapme.viewport',
+      JSON.stringify({ center: [point.lat, point.lng], zoom: map.getZoom() })
+    );
+  }
+
+  function centerOnCurrentLocation() {
+    if (!map || !navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        if (!map) return;
+        map.setView([coords.latitude, coords.longitude], 13);
+        saveViewport();
+      },
+      () => {
+        // Keep the default view when location access is denied or unavailable.
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10_000,
+        maximumAge: 300_000
+      }
+    );
+  }
+
   function markerHtml(place: MapPlace): string {
     return `<div class="mapme-marker" style="background:${place.category.color}">${place.category.iconSvg}</div>`;
   }
@@ -132,14 +161,8 @@
       map.on('click', (event) =>
         onmapclick({ latitude: event.latlng.lat, longitude: event.latlng.lng })
       );
-      map.on('moveend', () => {
-        if (!map) return;
-        const point = map.getCenter();
-        localStorage.setItem(
-          'mapme.viewport',
-          JSON.stringify({ center: [point.lat, point.lng], zoom: map.getZoom() })
-        );
-      });
+      map.on('moveend', saveViewport);
+      if (!saved) centerOnCurrentLocation();
       refreshMarkers();
       refreshDraft();
       setTimeout(() => map?.invalidateSize(), 0);
