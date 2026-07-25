@@ -91,14 +91,48 @@ The previous database and uploads are retained under `/data/backups/rollback-*`.
 
 ## Unraid
 
-Use `unraid/mapme.xml`, or configure:
+### Install with the template
 
-- Repository: `ghcr.io/tylxr59/mapme:latest`
-- Network: Bridge
-- Port: `3000 -> 3000`
-- Path: `/mnt/user/appdata/mapme -> /data`
-- `PUID=99`, `PGID=100`
-- Set `ORIGIN` to the exact URL used to access MapMe
+Open the Unraid terminal and install the included Docker template:
+
+```sh
+mkdir -p /boot/config/plugins/dockerMan/templates-user
+curl -fsSL \
+  https://raw.githubusercontent.com/tylxr59/MapMe/main/unraid/mapme.xml \
+  -o /boot/config/plugins/dockerMan/templates-user/my-mapme.xml
+```
+
+Then open **Docker → Add Container** and select **MapMe** from the Template dropdown.
+
+### Configure manually
+
+Open **Docker → Add Container** and configure these container fields:
+
+| Field        | Value                               |
+| ------------ | ----------------------------------- |
+| Name         | `MapMe`                             |
+| Repository   | `ghcr.io/tylxr59/mapme:latest`      |
+| Network Type | `Bridge`                            |
+| Port mapping | Host `3000` → Container `3000`      |
+| Path mapping | `/mnt/user/appdata/mapme` → `/data` |
+
+Use **Add another Path, Port, Variable, Label or Device** to add these variables:
+
+| Config Type | Name                | Key         | Value                                         |
+| ----------- | ------------------- | ----------- | --------------------------------------------- |
+| Variable    | Public origin       | `ORIGIN`    | `http://192.168.1.50:3000`                    |
+| Variable    | Authentication mode | `AUTH_MODE` | `none`                                        |
+| Variable    | PUID                | `PUID`      | `99`                                          |
+| Variable    | PGID                | `PGID`      | `100`                                         |
+| Variable    | Timezone            | `TZ`        | Your timezone, for example `America/New_York` |
+
+`ORIGIN` is required. Replace the example with the exact URL you will enter in your browser,
+including `http://` or `https://` and any non-default port. For example, use
+`http://192.168.1.50:8080` when mapping host port 8080, or `https://map.example.com` when MapMe is
+published through an HTTPS reverse proxy. Do not use the container's internal IP.
+
+If an existing container reports `ORIGIN is required in production`, edit it in the Docker tab,
+add the `ORIGIN` variable above, and click **Apply**.
 
 Docker Compose is not required.
 
