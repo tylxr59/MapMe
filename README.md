@@ -62,6 +62,8 @@ The default raster tiles come from OpenStreetMap and display the required attrib
 - GeoJSON is the canonical interchange format.
 - CSV uses a fixed header and stores tags as a JSON array.
 - KML imports point placemarks only; folders become tags and embedded HTML is converted to text.
+- GPX imports waypoints only and is tailored for OsmAnd Favorites exports; OsmAnd folders become
+  tags and imported waypoints are marked as favorites.
 - Imports are previewed and likely duplicates are skipped unless explicitly imported as copies.
 - Complete ZIP backups contain a consistent SQLite snapshot, uploads, checksums, and a manifest.
 - Web restores are inspected, staged, and activated after one deliberate restart.

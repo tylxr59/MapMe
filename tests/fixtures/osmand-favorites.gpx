@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1"
+  creator="OsmAnd"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xmlns:osmand="https://osmand.net">
+  <wpt lat="37.5460870" lon="-77.4532843">
+    <time>2023-06-07T12:31:35Z</time>
+    <name>OsmAnd test place</name>
+    <desc><![CDATA[<b>Great</b> view]]></desc>
+    <type>Sightseeing</type>
+    <extensions>
+      <osmand:address>123 Floyd Avenue</osmand:address>
+      <osmand:icon>place_town</osmand:icon>
+      <osmand:background>circle</osmand:background>
+      <osmand:color>#ff4e4eff</osmand:color>
+    </extensions>
+  </wpt>
+</gpx>

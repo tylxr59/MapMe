@@ -170,9 +170,12 @@
 <section class="card wide">
   <Upload size={22} />
   <h2>Import places</h2>
-  <p>Preview GeoJSON, CSV, or Google My Maps KML. Existing places are never overwritten.</p>
+  <p>
+    Preview GeoJSON, CSV, Google My Maps KML, or OsmAnd Favorites GPX. Existing places are never
+    overwritten.
+  </p>
   <div class="controls">
-    <input bind:this={importFile} type="file" accept=".geojson,.json,.csv,.kml" />
+    <input bind:this={importFile} type="file" accept=".geojson,.json,.csv,.kml,.gpx" />
     <button onclick={previewImport} disabled={importBusy}
       >{#if importBusy}<LoaderCircle class="spin" size={16} />{/if} Preview import</button
     >

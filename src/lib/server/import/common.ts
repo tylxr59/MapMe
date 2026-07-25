@@ -18,6 +18,7 @@ import { getDatabase } from '$lib/server/db/driver';
 import { storagePaths } from '$lib/server/storage/paths';
 import { parseCsvImport } from './csv';
 import { parseGeoJsonImport } from './geojson';
+import { parseGpxImport } from './gpx';
 import { parseKmlImport } from './kml';
 
 export interface RawImportCandidate {
@@ -41,7 +42,7 @@ export interface RawImportCandidate {
 }
 
 export interface ParsedImport {
-  format: 'geojson' | 'csv' | 'kml';
+  format: 'geojson' | 'csv' | 'kml' | 'gpx';
   records: RawImportCandidate[];
 }
 
@@ -105,6 +106,7 @@ function tagIds(value: unknown, tags: TagDTO[]): { ids: string[]; names: string[
 export function parseImportSource(format: ParsedImport['format'], content: string): ParsedImport {
   if (format === 'geojson') return { format, records: parseGeoJsonImport(content) };
   if (format === 'csv') return { format, records: parseCsvImport(content) };
+  if (format === 'gpx') return { format, records: parseGpxImport(content) };
   return { format, records: parseKmlImport(content) };
 }
 
@@ -195,8 +197,8 @@ export function buildImportPreview(parsed: ParsedImport, token: string): ImportP
 export async function stageImport(file: File): Promise<ImportPreview> {
   const extension = file.name.split('.').at(-1)?.toLowerCase();
   const format = extension === 'json' || extension === 'geojson' ? 'geojson' : extension;
-  if (!['geojson', 'csv', 'kml'].includes(format ?? '')) {
-    throw new Error('Use a .geojson, .json, .csv, or .kml file');
+  if (!['geojson', 'csv', 'kml', 'gpx'].includes(format ?? '')) {
+    throw new Error('Use a .geojson, .json, .csv, .kml, or .gpx file');
   }
   const token = randomUUID();
   const directory = join(storagePaths.backupStaging, `import-${token}`);

@@ -121,7 +121,7 @@ export interface ImportRecordResult {
 
 export interface ImportPreview {
   token: string;
-  format: 'geojson' | 'csv' | 'kml';
+  format: 'geojson' | 'csv' | 'kml' | 'gpx';
   total: number;
   valid: number;
   invalid: number;
