@@ -42,6 +42,12 @@ const environmentSchema = z
       .default('https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
     TILE_ATTRIBUTION: z.string().min(1).default('© OpenStreetMap contributors'),
     TILE_MAX_ZOOM: z.coerce.number().int().min(1).max(24).default(19),
+    TILE_PROXY_ENABLED: booleanEnv('true'),
+    TILE_CACHE_PATH: z
+      .string()
+      .min(1)
+      .default(dev ? './data/tile-cache' : '/data/tile-cache'),
+    TILE_CACHE_MAX_MB: z.coerce.number().int().min(64).max(16_384).default(512),
     GEOCODING_ENABLED: booleanEnv('true'),
     GEOCODING_PROVIDER: z.literal('nominatim').default('nominatim'),
     GEOCODING_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
@@ -103,6 +109,9 @@ export const privateConfig = Object.freeze({
   tileUrl: env.TILE_URL,
   tileAttribution: env.TILE_ATTRIBUTION,
   tileMaxZoom: env.TILE_MAX_ZOOM,
+  tileProxyEnabled: env.TILE_PROXY_ENABLED,
+  tileCachePath: resolve(env.TILE_CACHE_PATH),
+  tileCacheMaxMb: env.TILE_CACHE_MAX_MB,
   geocodingEnabled: env.GEOCODING_ENABLED,
   geocodingProvider: env.GEOCODING_PROVIDER,
   geocodingUrl: env.GEOCODING_URL.replace(/\/+$/, ''),

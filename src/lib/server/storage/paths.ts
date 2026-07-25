@@ -10,7 +10,8 @@ export const storagePaths = Object.freeze({
   thumbnails: join(privateConfig.uploadPath, 'thumbnails'),
   uploadStaging: join(privateConfig.uploadPath, '.staging'),
   backups: privateConfig.backupPath,
-  backupStaging: join(privateConfig.backupPath, '.staging')
+  backupStaging: join(privateConfig.backupPath, '.staging'),
+  tileCache: privateConfig.tileCachePath
 });
 
 export async function initializeStorage(): Promise<void> {
@@ -21,7 +22,8 @@ export async function initializeStorage(): Promise<void> {
     storagePaths.thumbnails,
     storagePaths.uploadStaging,
     storagePaths.backups,
-    storagePaths.backupStaging
+    storagePaths.backupStaging,
+    storagePaths.tileCache
   ];
   for (const directory of directories) {
     await mkdir(directory, { recursive: true, mode: 0o700 });

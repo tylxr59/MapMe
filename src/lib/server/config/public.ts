@@ -6,7 +6,7 @@ export const publicConfig: SafeClientConfig = Object.freeze({
   appName: 'MapMe',
   appVersion: packageJson.version,
   authMode: privateConfig.authMode,
-  tileUrl: privateConfig.tileUrl,
+  tileUrl: privateConfig.tileProxyEnabled ? '/api/tiles/{z}/{x}/{y}' : privateConfig.tileUrl,
   tileAttribution: privateConfig.tileAttribution,
   tileMaxZoom: privateConfig.tileMaxZoom,
   geocodingEnabled: privateConfig.geocodingEnabled,

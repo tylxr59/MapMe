@@ -81,7 +81,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     'camera=(), microphone=(), geolocation=(self), payment=(), usb=()'
   );
   const contentSecurityPolicy = response.headers.get('Content-Security-Policy');
-  if (contentSecurityPolicy) {
+  if (contentSecurityPolicy && !privateConfig.tileProxyEnabled) {
     response.headers.set(
       'Content-Security-Policy',
       contentSecurityPolicy.replace(/img-src ([^;]+)/, (_directive, sources: string) => {

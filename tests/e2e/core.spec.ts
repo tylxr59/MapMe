@@ -19,19 +19,24 @@ test('centers the initial map on the user location', async ({ page, context }) =
     });
 });
 
-test('identifies MapMe as the referrer on tile requests', async ({ page }) => {
+test('routes tile requests through the same-origin proxy', async ({ page }) => {
   const tileReferrers: string[] = [];
+  let directUpstreamRequests = 0;
   page.on('request', (request) => {
-    if (new URL(request.url()).hostname === 'tile.openstreetmap.org') {
+    const url = new URL(request.url());
+    if (url.pathname.startsWith('/api/tiles/')) {
       tileReferrers.push(request.headers().referer ?? '');
     }
+    if (url.hostname === 'tile.openstreetmap.org') directUpstreamRequests += 1;
   });
 
   await page.goto('/');
   const tile = page.locator('img.leaflet-tile').first();
   await expect(tile).toBeVisible();
+  await expect(tile).toHaveAttribute('src', /\/api\/tiles\/\d+\/\d+\/\d+/);
   await expect(tile).toHaveAttribute('referrerpolicy', 'origin');
   await expect.poll(() => tileReferrers.find(Boolean)).toBe('http://127.0.0.1:4173/');
+  expect(directUpstreamRequests).toBe(0);
 });
 
 test('starts Add place at the user location', async ({ page, context }) => {

@@ -24,6 +24,7 @@ Open `http://localhost:3000`. All persistent data is under `/data`:
 ├── database.sqlite-wal
 ├── database.sqlite-shm
 ├── uploads/
+├── tile-cache/
 └── backups/
 ```
 
@@ -55,7 +56,16 @@ Set `AUTH_MODE=proxy`, `AUTH_PROXY_HEADER`, and a comma-separated `AUTH_PROXY_TR
 
 Public Nominatim search is enabled by default and only runs when a user explicitly presses Search. It is cached and globally limited to one request per second. Do not turn on `GEOCODING_AUTOCOMPLETE` for the public endpoint; its usage policy forbids autocomplete. Map clicks, direct coordinates, and manual addresses work when geocoding is disabled.
 
-The default raster tiles come from OpenStreetMap and display the required attribution. Change `TILE_URL`, `TILE_ATTRIBUTION`, and `TILE_MAX_ZOOM` together when using another provider.
+The default raster tiles come from OpenStreetMap and display the required attribution. MapMe
+proxies user-requested tiles through the same origin and keeps a persistent, HTTP-aware cache
+under `/data/tile-cache`. This avoids relaxing cross-origin referrer protections in privacy-focused
+browsers. The proxy sends an identifiable MapMe user agent and an origin-only referrer, honors
+upstream cache headers, conditionally revalidates expired tiles, and never prefetches map areas.
+
+Set `TILE_PROXY_ENABLED=false` to request tiles directly from the browser. Change `TILE_URL`,
+`TILE_ATTRIBUTION`, and `TILE_MAX_ZOOM` together when using another provider.
+`TILE_CACHE_MAX_MB` limits the on-disk cache and defaults to 512 MiB. Cached tiles are disposable
+and are intentionally excluded from MapMe backups.
 
 ## Import, export, and backup
 
