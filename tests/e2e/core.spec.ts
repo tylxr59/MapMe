@@ -112,7 +112,7 @@ test('adds a place with direct coordinates and copies them from its details', as
   await page.getByLabel('Latitude').fill('42.3601');
   await page.getByLabel('Longitude').fill('-71.0589');
   await page.getByRole('button', { name: 'Save place' }).click();
-  await expect(page.getByText(placeName, { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: placeName, exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Copy coords' }).click();
   await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
   await expect
