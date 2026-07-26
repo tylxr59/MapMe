@@ -1,20 +1,7 @@
-import { getPlace, listPlaces } from '$lib/server/db/queries/places';
-import type { PlaceFilters } from '$lib/types';
-
-const filters = (archived: boolean): PlaceFilters => ({
-  query: '',
-  listIds: [],
-  categoryIds: [],
-  favorite: null,
-  archived,
-  ratingMin: null,
-  sort: 'name_asc'
-});
+import { allPlaceDetails as queryAllPlaceDetails } from '$lib/server/db/queries/places';
 
 export function allPlaceDetails() {
-  return [...listPlaces(filters(false)), ...listPlaces(filters(true))]
-    .map((place) => getPlace(place.id))
-    .filter((place) => place !== null);
+  return queryAllPlaceDetails();
 }
 
 export function exportGeoJson(): string {

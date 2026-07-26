@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { placeInputSchema } from '$lib/schemas/place';
 import { filtersSchema } from '$lib/schemas/filters';
 import { safeFtsQuery } from '$lib/server/db/queries/search';
+import { safeLocalRedirect } from '$lib/server/security/redirect';
 import {
   categoryIconSvg,
   isValidCategoryIcon,
@@ -45,6 +46,15 @@ describe('place validation', () => {
     expect(parsed.address).toBeNull();
     expect(parsed.rating).toBeNull();
   });
+
+  it('rejects impossible calendar dates', () => {
+    for (const dateVisited of ['2024-02-30', '2023-02-29', '2024-04-31', '0000-01-01']) {
+      expect(placeInputSchema.safeParse({ ...validPlace, dateVisited }).success).toBe(false);
+    }
+    expect(placeInputSchema.safeParse({ ...validPlace, dateVisited: '2024-02-29' }).success).toBe(
+      true
+    );
+  });
 });
 
 describe('filter validation', () => {
@@ -87,5 +97,15 @@ describe('trusted icon and storage handling', () => {
     expect(safeStoragePath('/tmp/uploads', '123e4567-e89b-42d3-a456-426614174000.webp')).toBe(
       '/tmp/uploads/123e4567-e89b-42d3-a456-426614174000.webp'
     );
+  });
+});
+
+describe('local redirect validation', () => {
+  it('preserves local paths and rejects browser-normalized external targets', () => {
+    const origin = 'https://places.example.com';
+    expect(safeLocalRedirect('/manage/data?tab=backups', origin)).toBe('/manage/data?tab=backups');
+    expect(safeLocalRedirect('//evil.example', origin)).toBe('/');
+    expect(safeLocalRedirect('/\\evil.example', origin)).toBe('/');
+    expect(safeLocalRedirect('https://evil.example', origin)).toBe('/');
   });
 });

@@ -3,10 +3,12 @@ import { getAppConfig } from '$lib/server/config/app';
 import { verifyPassword } from '$lib/server/auth/password';
 import {
   clearLoginFailures,
+  loginClientKey,
   loginRateLimit,
   recordLoginFailure
 } from '$lib/server/auth/rate-limit';
 import { createSession, SESSION_COOKIE } from '$lib/server/auth/sessions';
+import { safeLocalRedirect } from '$lib/server/security/redirect';
 
 export const actions = {
   default: async (event) => {
@@ -20,7 +22,8 @@ export const actions = {
     } catch {
       // Tests and local previews may not provide an address.
     }
-    const limit = loginRateLimit(ip);
+    const clientKey = loginClientKey(ip, event.request.headers.get('user-agent'));
+    const limit = loginRateLimit(clientKey);
     if (!limit.allowed) {
       return fail(429, {
         message: `Too many login attempts. Try again in ${limit.retryAfterSeconds} seconds.`
@@ -29,10 +32,10 @@ export const actions = {
     const form = await event.request.formData();
     const password = String(form.get('password') ?? '');
     if (!(await verifyPassword(password, config.passwordHash))) {
-      recordLoginFailure(ip);
+      recordLoginFailure(clientKey);
       return fail(400, { message: 'Incorrect password.' });
     }
-    clearLoginFailures(ip);
+    clearLoginFailures(clientKey);
     const session = createSession(config.passwordHash);
     event.cookies.set(SESSION_COOKIE, session.token, {
       path: '/',
@@ -41,8 +44,7 @@ export const actions = {
       sameSite: 'lax',
       expires: session.expiresAt
     });
-    const requested = event.url.searchParams.get('returnTo') ?? '/';
-    const returnTo = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
+    const returnTo = safeLocalRedirect(event.url.searchParams.get('returnTo'), event.url.origin);
     throw redirect(303, returnTo);
   }
 } satisfies Actions;

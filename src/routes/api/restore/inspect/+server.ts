@@ -1,14 +1,15 @@
-import { error, type RequestHandler } from '@sveltejs/kit';
+import type { RequestHandler } from '@sveltejs/kit';
+import { rm } from 'node:fs/promises';
 import { assertSameOrigin } from '$lib/server/security/origin';
 import { inspectRestore } from '$lib/server/backup/restore';
+import { streamRestoreUpload } from '$lib/server/backup/upload';
 
 export const POST: RequestHandler = async ({ request }) => {
   assertSameOrigin(request);
-  const form = await request.formData();
-  const file = form.get('file');
-  if (!(file instanceof File)) throw error(400, 'Choose a MapMe backup ZIP');
+  let upload: Awaited<ReturnType<typeof streamRestoreUpload>> | null = null;
   try {
-    const inspection = await inspectRestore(file);
+    upload = await streamRestoreUpload(request);
+    const inspection = await inspectRestore(upload.path);
     return Response.json({
       inspection: {
         token: inspection.token,
@@ -21,5 +22,7 @@ export const POST: RequestHandler = async ({ request }) => {
       { error: restoreError instanceof Error ? restoreError.message : 'Backup inspection failed' },
       { status: 400 }
     );
+  } finally {
+    if (upload) await rm(upload.path, { force: true }).catch(() => undefined);
   }
 };

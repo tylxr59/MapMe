@@ -24,14 +24,24 @@ const known = new Set([
 ]);
 
 export function parseGeoJsonImport(content: string): RawImportCandidate[] {
-  const document = JSON.parse(content);
-  if (!document || document.type !== 'FeatureCollection' || !Array.isArray(document.features)) {
+  const value = JSON.parse(content) as unknown;
+  const document =
+    value && typeof value === 'object' ? (value as Record<string, unknown>) : Object.create(null);
+  if (document.type !== 'FeatureCollection' || !Array.isArray(document.features)) {
     throw new Error('GeoJSON must be a FeatureCollection');
   }
-  return document.features.slice(0, 10_000).map((feature: any, index: number) => {
+  return document.features.slice(0, 10_000).map((value: unknown, index: number) => {
+    const feature =
+      value && typeof value === 'object' ? (value as Record<string, unknown>) : Object.create(null);
+    const geometry =
+      feature.geometry && typeof feature.geometry === 'object'
+        ? (feature.geometry as Record<string, unknown>)
+        : Object.create(null);
     const properties =
-      feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
-    const coordinates = feature?.geometry?.coordinates;
+      feature.properties && typeof feature.properties === 'object'
+        ? (feature.properties as Record<string, unknown>)
+        : Object.create(null);
+    const coordinates = geometry.coordinates;
     const extraProperties = Object.fromEntries(
       Object.entries(properties).filter(([key]) => !known.has(key))
     );
@@ -46,13 +56,9 @@ export function parseGeoJsonImport(content: string): RawImportCandidate[] {
             : undefined,
       name: properties.name,
       latitude:
-        feature?.geometry?.type === 'Point' && Array.isArray(coordinates)
-          ? coordinates[1]
-          : undefined,
+        geometry.type === 'Point' && Array.isArray(coordinates) ? coordinates[1] : undefined,
       longitude:
-        feature?.geometry?.type === 'Point' && Array.isArray(coordinates)
-          ? coordinates[0]
-          : undefined,
+        geometry.type === 'Point' && Array.isArray(coordinates) ? coordinates[0] : undefined,
       address: properties.address,
       description: properties.description,
       category: properties.categoryId ?? properties.category,
@@ -66,9 +72,9 @@ export function parseGeoJsonImport(content: string): RawImportCandidate[] {
       sourceUrl: properties.sourceUrl,
       extraProperties: extraSize <= 65_536 ? extraProperties : {},
       warnings: [
-        ...(feature?.geometry?.type !== 'Point' ? ['Only Point geometries can be imported.'] : []),
+        ...(geometry.type !== 'Point' ? ['Only Point geometries can be imported.'] : []),
         ...(extraSize > 65_536 ? ['Unknown properties exceeded 64 KiB and were discarded.'] : []),
-        ...(properties.attachments?.length
+        ...(Array.isArray(properties.attachments) && properties.attachments.length
           ? ['Photo metadata was present, but photo binaries are not imported.']
           : [])
       ]

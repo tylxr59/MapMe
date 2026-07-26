@@ -33,7 +33,7 @@
         >List
         <select name="lists">
           <option value="">Any list</option>
-          {#each lists as list}
+          {#each lists as list (list.id)}
             <option value={list.id} selected={filters.listIds.includes(list.id)}>{list.name}</option
             >
           {/each}
@@ -43,7 +43,7 @@
         >Category
         <select name="categories">
           <option value="">Any category</option>
-          {#each categories as category}
+          {#each categories as category (category.id)}
             <option value={category.id} selected={filters.categoryIds.includes(category.id)}
               >{category.name}</option
             >

@@ -7,6 +7,7 @@
   import PlaceEditor from '$lib/components/places/PlaceEditor.svelte';
   import PlaceList from '$lib/components/places/PlaceList.svelte';
   import type { MapPlace, PlaceDetail } from '$lib/types';
+  import { onDestroy } from 'svelte';
 
   let { data, form } = $props();
   let selectedId = $state<string | null>(null);
@@ -21,6 +22,7 @@
   let locationNotice = $state('');
   let mapCenter = $state({ latitude: 39.5, longitude: -98.35 });
   let locationNoticeTimer: ReturnType<typeof setTimeout> | undefined;
+  let detailRequest: AbortController | null = null;
   let panelOpen = $derived(
     (editorOpen && Boolean(draft)) || Boolean(selectedPlace) || loadingDetail
   );
@@ -38,17 +40,32 @@
   );
 
   async function selectPlace(id: string) {
+    detailRequest?.abort();
+    const controller = new AbortController();
+    detailRequest = controller;
     selectedId = id;
     editorOpen = false;
     editing = false;
     mobileSidebarOpen = false;
     loadingDetail = true;
     try {
-      const response = await fetch(`/api/places/${id}`, { cache: 'no-store' });
+      const response = await fetch(`/api/places/${id}`, {
+        cache: 'no-store',
+        signal: controller.signal
+      });
       const result = await response.json();
-      if (response.ok) selectedPlace = result.place;
+      if (response.ok && detailRequest === controller && selectedId === id) {
+        selectedPlace = result.place;
+      }
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        showLocationNotice('Could not load that place.');
+      }
     } finally {
-      loadingDetail = false;
+      if (detailRequest === controller) {
+        detailRequest = null;
+        loadingDetail = false;
+      }
     }
   }
 
@@ -128,6 +145,11 @@
     await invalidateAll();
     await selectPlace(placeId);
   }
+
+  onDestroy(() => {
+    detailRequest?.abort();
+    clearTimeout(locationNoticeTimer);
+  });
 </script>
 
 <svelte:head>
@@ -226,6 +248,7 @@
         tileUrl={data.config.tileUrl}
         tileAttribution={data.config.tileAttribution}
         tileMaxZoom={data.config.tileMaxZoom}
+        tileProxyEnabled={data.config.tileProxyEnabled}
         onselect={selectPlace}
         onmapclick={mapClicked}
         onviewportchange={(coordinates) => (mapCenter = coordinates)}

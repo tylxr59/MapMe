@@ -3,6 +3,9 @@ import { getDatabase } from '$lib/server/db/driver';
 import { privateConfig } from '$lib/server/config/private';
 
 export const SESSION_COOKIE = 'mapme_session';
+const SESSION_TOUCH_INTERVAL_MS = 15 * 60 * 1000;
+const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+let nextCleanupAt = 0;
 
 export function sha256(value: string | Uint8Array): string {
   return createHash('sha256').update(value).digest('hex');
@@ -36,20 +39,28 @@ export function createSession(passwordHash: string): { token: string; expiresAt:
 export function validateSession(token: string, passwordHash: string): boolean {
   if (token.length < 32 || token.length > 100) return false;
   const database = getDatabase();
-  const now = new Date().toISOString();
-  database.prepare('DELETE FROM auth_sessions WHERE expires_at <= ?').run(now);
+  const nowMs = Date.now();
+  const now = new Date(nowMs).toISOString();
+  if (nowMs >= nextCleanupAt) {
+    database.prepare('DELETE FROM auth_sessions WHERE expires_at <= ?').run(now);
+    nextCleanupAt = nowMs + SESSION_CLEANUP_INTERVAL_MS;
+  }
   const tokenHash = sha256(token);
   const row = database
     .prepare(
-      `SELECT token_hash
+      `SELECT token_hash, last_seen_at
        FROM auth_sessions
        WHERE token_hash = ? AND password_fingerprint = ? AND expires_at > ?`
     )
-    .get(tokenHash, passwordFingerprint(passwordHash), now);
+    .get(tokenHash, passwordFingerprint(passwordHash), now) as
+    { token_hash: string; last_seen_at: string } | undefined;
   if (!row) return false;
-  database
-    .prepare('UPDATE auth_sessions SET last_seen_at = ? WHERE token_hash = ?')
-    .run(now, tokenHash);
+  const lastSeenAt = Date.parse(row.last_seen_at);
+  if (!Number.isFinite(lastSeenAt) || nowMs - lastSeenAt >= SESSION_TOUCH_INTERVAL_MS) {
+    database
+      .prepare('UPDATE auth_sessions SET last_seen_at = ? WHERE token_hash = ?')
+      .run(now, tokenHash);
+  }
   return true;
 }
 

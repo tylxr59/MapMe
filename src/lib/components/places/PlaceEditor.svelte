@@ -228,7 +228,7 @@
           {#if geocodeError}<p class="field-error">{geocodeError}</p>{/if}
           {#if geocodeResults.length}
             <div class="geocode-results">
-              {#each geocodeResults as result}
+              {#each geocodeResults as result (`${result.latitude},${result.longitude},${result.displayName}`)}
                 <button type="button" onclick={() => chooseGeocode(result)}
                   >{result.displayName}</button
                 >
@@ -250,7 +250,9 @@
       <label
         >Category
         <select name="categoryId" required value={place?.category.id ?? categories.at(-1)?.id}>
-          {#each categories as category}<option value={category.id}>{category.name}</option>{/each}
+          {#each categories as category (category.id)}<option value={category.id}
+              >{category.name}</option
+            >{/each}
         </select>
       </label>
       <label
@@ -260,7 +262,7 @@
           required
           value={place?.list.id ?? lists.find((list) => list.isSystem)?.id ?? lists.at(-1)?.id}
         >
-          {#each lists as list}<option value={list.id}>{list.name}</option>{/each}
+          {#each lists as list (list.id)}<option value={list.id}>{list.name}</option>{/each}
         </select>
       </label>
       <label
@@ -283,7 +285,7 @@
           <span><Link2 size={15} /> Links</span>
           <button type="button" onclick={addLink}><Plus size={15} /> Add link</button>
         </div>
-        {#each links as link, index}
+        {#each links as link, index (link)}
           <div class="link-row">
             <label>
               Title

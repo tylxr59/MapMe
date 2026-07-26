@@ -17,8 +17,7 @@ export default tseslint.config(
     },
     rules: {
       'svelte/no-navigation-without-resolve': 'off',
-      'svelte/require-each-key': 'off',
-      'svelte/no-at-html-tags': 'off'
+      'svelte/require-each-key': 'error'
     }
   },
   {
@@ -27,9 +26,18 @@ export default tseslint.config(
         ...globals.browser,
         ...globals.node
       }
-    },
+    }
+  },
+  {
+    files: [
+      'src/lib/components/categories/CategoryIconPicker.svelte',
+      'src/lib/components/places/PlaceDetails.svelte',
+      'src/lib/components/places/PlaceListItem.svelte',
+      'src/routes/manage/categories/+page.svelte'
+    ],
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off'
+      // These values are generated exclusively from packaged, allow-listed Lucide icon nodes.
+      'svelte/no-at-html-tags': 'off'
     }
   }
 );

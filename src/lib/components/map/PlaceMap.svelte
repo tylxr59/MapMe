@@ -9,6 +9,7 @@
     tileUrl,
     tileAttribution,
     tileMaxZoom,
+    tileProxyEnabled,
     onselect,
     onmapclick,
     onviewportchange
@@ -19,6 +20,7 @@
     tileUrl: string;
     tileAttribution: string;
     tileMaxZoom: number;
+    tileProxyEnabled: boolean;
     onselect: (id: string) => void;
     onmapclick: (coordinates: { latitude: number; longitude: number }) => void;
     onviewportchange?: (coordinates: { latitude: number; longitude: number }) => void;
@@ -29,6 +31,7 @@
   let cluster: import('leaflet').MarkerClusterGroup | null = null;
   let draftMarker: import('leaflet').Marker | null = null;
   let leaflet: typeof import('leaflet') | null = null;
+  let initialTileState = $state<'loading' | 'slow' | 'ready'>('loading');
   const placeFocusZoom = 15;
 
   function saveViewport() {
@@ -138,6 +141,7 @@
   onMount(() => {
     let destroyed = false;
     let resizeObserver: ResizeObserver | undefined;
+    let slowTileTimer: ReturnType<typeof setTimeout> | undefined;
     void (async () => {
       const leafletModule = await import('leaflet');
       leaflet = leafletModule.default;
@@ -158,13 +162,30 @@
         }
       }
       map = leaflet.map(container, { zoomControl: false }).setView(center, zoom);
-      leaflet
-        .tileLayer(tileUrl, {
-          attribution: tileAttribution,
-          maxZoom: tileMaxZoom,
-          referrerPolicy: 'origin'
-        })
-        .addTo(map);
+      let initialTileLoaded = false;
+      const tileLayer = leaflet.tileLayer(tileUrl, {
+        attribution: tileAttribution,
+        maxZoom: tileMaxZoom,
+        referrerPolicy: 'origin'
+      });
+      tileLayer.on('tileload', () => {
+        initialTileLoaded = true;
+      });
+      tileLayer.on('tileerror', () => {
+        if (initialTileState !== 'ready') initialTileState = 'slow';
+      });
+      tileLayer.on('load', () => {
+        if (!initialTileLoaded) {
+          initialTileState = 'slow';
+          return;
+        }
+        initialTileState = 'ready';
+        clearTimeout(slowTileTimer);
+      });
+      slowTileTimer = setTimeout(() => {
+        if (initialTileState !== 'ready') initialTileState = 'slow';
+      }, 8_000);
+      tileLayer.addTo(map);
       leaflet.control.zoom({ position: 'topright' }).addTo(map);
       cluster = leaflet.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 48 });
       map.addLayer(cluster);
@@ -182,6 +203,7 @@
     })();
     return () => {
       destroyed = true;
+      clearTimeout(slowTileTimer);
       resizeObserver?.disconnect();
       map?.remove();
       map = null;
@@ -189,12 +211,109 @@
   });
 </script>
 
-<div class="map" bind:this={container} aria-label="Saved places map"></div>
+<div class="map-shell">
+  <div class="map" bind:this={container} aria-label="Saved places map"></div>
+  {#if initialTileState !== 'ready'}
+    <div
+      class="tile-status"
+      class:slow={initialTileState === 'slow'}
+      role="status"
+      aria-live="polite"
+      data-testid="tile-status"
+    >
+      <span class="tile-spinner" aria-hidden="true"></span>
+      <span>
+        <strong>
+          {initialTileState === 'slow'
+            ? 'Map tiles are taking longer than expected'
+            : tileProxyEnabled
+              ? 'Starting map tile service…'
+              : 'Loading map tiles…'}
+        </strong>
+        {#if initialTileState === 'slow'}
+          <small>MapMe will keep trying.</small>
+        {:else if tileProxyEnabled}
+          <small>The first load can take a moment while the tile proxy starts.</small>
+        {/if}
+      </span>
+    </div>
+  {/if}
+</div>
 
 <style>
+  .map-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 20rem;
+  }
+
   .map {
     width: 100%;
     height: 100%;
     min-height: 20rem;
+  }
+
+  .tile-status {
+    position: absolute;
+    z-index: 1000;
+    top: 1rem;
+    left: 50%;
+    display: flex;
+    max-width: min(28rem, calc(100% - 2rem));
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+    border-radius: 0.75rem;
+    background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+    box-shadow: 0 0.4rem 1.25rem rgb(15 23 42 / 18%);
+    color: var(--text);
+    pointer-events: none;
+    transform: translateX(-50%);
+    backdrop-filter: blur(0.4rem);
+  }
+
+  .tile-status.slow {
+    border-color: color-mix(in srgb, var(--danger) 50%, var(--line));
+  }
+
+  .tile-status span:last-child {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .tile-status strong {
+    font-size: 0.85rem;
+    line-height: 1.25;
+  }
+
+  .tile-status small {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .tile-spinner {
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 auto;
+    border: 2px solid color-mix(in srgb, var(--green-700) 25%, transparent);
+    border-top-color: var(--green-700);
+    border-radius: 50%;
+    animation: tile-spin 0.8s linear infinite;
+  }
+
+  @keyframes tile-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile-spinner {
+      animation: none;
+      border-color: var(--green-700);
+    }
   }
 </style>

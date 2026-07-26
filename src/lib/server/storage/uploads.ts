@@ -1,6 +1,7 @@
 import Busboy from 'busboy';
 import { createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { pipeline } from 'node:stream/promises';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
@@ -88,7 +89,7 @@ export function streamSinglePhoto(request: Request): Promise<StagedUpload> {
         void fail(error instanceof Error ? error : new Error('Upload failed'));
       }
     });
-    const stream = Readable.fromWeb(request.body as any);
+    const stream = Readable.fromWeb(request.body as unknown as NodeReadableStream);
     stream.on('error', (error) => void fail(error));
     stream.pipe(busboy);
   });

@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { ZodError } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import { formDataObject } from '$lib/schemas/common';
 import { filtersSchema } from '$lib/schemas/filters';
@@ -32,11 +33,11 @@ export const load: PageServerLoad = ({ url }) => {
 };
 
 function validationFailure(error: unknown) {
-  if (error && typeof error === 'object' && 'issues' in error) {
+  if (error instanceof ZodError) {
     return fail(400, {
       success: false,
       message: 'Please correct the highlighted fields.',
-      issues: (error as any).issues
+      issues: error.issues
     });
   }
   const message = error instanceof Error ? error.message : 'The operation could not be completed.';

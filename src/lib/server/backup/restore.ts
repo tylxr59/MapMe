@@ -1,4 +1,5 @@
 import yauzl from 'yauzl';
+import { z } from 'zod';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomUUID } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
@@ -17,6 +18,47 @@ interface RestoreInspection {
   stageDirectory: string;
   expiresAt: string;
 }
+
+const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
+const uploadPathSchema = z
+  .string()
+  .regex(/^uploads\/(originals|thumbnails)\/[a-f0-9-]{36}\.[a-z0-9]+$/);
+const backupManifestSchema = z
+  .object({
+    formatVersion: z.literal(1),
+    appVersion: z.string().min(1).max(100),
+    schemaVersion: z.number().int().min(1),
+    createdAt: z.string().datetime(),
+    database: z.object({
+      path: z.literal('database.sqlite'),
+      size: z.number().int().positive(),
+      sha256: sha256Schema
+    }),
+    uploads: z
+      .array(
+        z.object({
+          path: uploadPathSchema,
+          size: z.number().int().positive(),
+          sha256: sha256Schema
+        })
+      )
+      .max(100_000),
+    attachmentCount: z.number().int().nonnegative()
+  })
+  .strict()
+  .superRefine((manifest, context) => {
+    const paths = manifest.uploads.map((upload) => upload.path);
+    if (new Set(paths).size !== paths.length) {
+      context.addIssue({ code: 'custom', path: ['uploads'], message: 'Duplicate upload paths' });
+    }
+    if (manifest.uploads.length !== manifest.attachmentCount * 2) {
+      context.addIssue({
+        code: 'custom',
+        path: ['attachmentCount'],
+        message: 'Attachment count does not match upload entries'
+      });
+    }
+  });
 
 async function sha256File(path: string): Promise<string> {
   const hash = createHash('sha256');
@@ -43,10 +85,10 @@ function validateEntryName(name: string): void {
   }
 }
 
-function extractZip(buffer: Buffer, directory: string): Promise<void> {
+function extractZip(archivePath: string, directory: string): Promise<Set<string>> {
   return new Promise((resolve, reject) => {
-    yauzl.fromBuffer(
-      buffer,
+    yauzl.open(
+      archivePath,
       { lazyEntries: true, decodeStrings: true, validateEntrySizes: true },
       (openError, zip) => {
         if (openError || !zip) return reject(openError ?? new Error('Could not open ZIP'));
@@ -62,13 +104,16 @@ function extractZip(buffer: Buffer, directory: string): Promise<void> {
         };
         zip.on('error', fail);
         zip.on('end', () => {
-          if (!failed) resolve();
+          if (!failed) resolve(names);
         });
         zip.on('entry', async (entry) => {
           try {
             entries++;
             if (entries > 100_000) throw new Error('Backup contains too many entries');
             validateEntryName(entry.fileName);
+            if (entry.fileName === 'manifest.json' && entry.uncompressedSize > 1024 * 1024) {
+              throw new Error('Backup manifest is too large');
+            }
             if (names.has(entry.fileName))
               throw new Error(`Duplicate ZIP entry: ${entry.fileName}`);
             names.add(entry.fileName);
@@ -103,32 +148,35 @@ function extractZip(buffer: Buffer, directory: string): Promise<void> {
 }
 
 function validateManifest(value: unknown): BackupManifest {
-  const manifest = value as BackupManifest;
-  if (
-    !manifest ||
-    manifest.formatVersion !== 1 ||
-    !manifest.database ||
-    manifest.database.path !== 'database.sqlite' ||
-    !Array.isArray(manifest.uploads) ||
-    !Number.isInteger(manifest.schemaVersion)
-  ) {
-    throw new Error('Unsupported or malformed backup manifest');
-  }
-  return manifest;
+  const parsed = backupManifestSchema.safeParse(value);
+  if (!parsed.success) throw new Error('Unsupported or malformed backup manifest');
+  return parsed.data;
 }
 
-export async function inspectRestore(file: File): Promise<RestoreInspection> {
-  if (file.size > privateConfig.restoreMaxSizeMb * 1024 * 1024) {
+export async function inspectRestore(archivePath: string): Promise<RestoreInspection> {
+  const archiveInfo = await stat(archivePath);
+  if (archiveInfo.size > privateConfig.restoreMaxSizeMb * 1024 * 1024) {
     throw new Error(`Backup exceeds ${privateConfig.restoreMaxSizeMb} MiB`);
   }
   const token = randomUUID();
   const stageDirectory = join(storagePaths.backupStaging, `restore-${token}`);
   await mkdir(stageDirectory, { recursive: true, mode: 0o700 });
   try {
-    await extractZip(Buffer.from(await file.arrayBuffer()), stageDirectory);
+    const archiveEntries = await extractZip(archivePath, stageDirectory);
     const manifest = validateManifest(
       JSON.parse(await readFile(join(stageDirectory, 'manifest.json'), 'utf8'))
     );
+    const expectedEntries = new Set([
+      'manifest.json',
+      'database.sqlite',
+      ...manifest.uploads.map((upload) => upload.path)
+    ]);
+    if (
+      archiveEntries.size !== expectedEntries.size ||
+      [...archiveEntries].some((entry) => !expectedEntries.has(entry))
+    ) {
+      throw new Error('Backup entries do not match the manifest');
+    }
     if (manifest.schemaVersion > databaseHealth().schemaVersion) {
       throw new Error('This backup was created by a newer, unsupported MapMe schema');
     }
@@ -140,14 +188,47 @@ export async function inspectRestore(file: File): Promise<RestoreInspection> {
     ) {
       throw new Error('Backup database checksum does not match the manifest');
     }
-    const stagedDatabase = new DatabaseSync(databasePath, { readOnly: true });
-    const integrity = stagedDatabase.prepare('PRAGMA integrity_check').get() as {
-      integrity_check: string;
-    };
-    const foreignKeys = stagedDatabase.prepare('PRAGMA foreign_key_check').all();
-    stagedDatabase.close();
-    if (integrity.integrity_check !== 'ok' || foreignKeys.length > 0) {
-      throw new Error('Backup database failed integrity checks');
+    const stagedDatabase = new DatabaseSync(databasePath, {
+      readOnly: true,
+      enableForeignKeyConstraints: true
+    });
+    try {
+      const integrity = stagedDatabase.prepare('PRAGMA integrity_check').get() as {
+        integrity_check: string;
+      };
+      const foreignKeys = stagedDatabase.prepare('PRAGMA foreign_key_check').all();
+      const schema = stagedDatabase
+        .prepare('SELECT coalesce(max(version), 0) AS version FROM schema_migrations')
+        .get() as { version: number };
+      if (
+        integrity.integrity_check !== 'ok' ||
+        foreignKeys.length > 0 ||
+        schema.version !== manifest.schemaVersion
+      ) {
+        throw new Error('Backup database failed integrity checks');
+      }
+      const attachments = stagedDatabase
+        .prepare('SELECT storage_name, thumbnail_storage_name FROM attachments ORDER BY id')
+        .all() as unknown as Array<{
+        storage_name: string;
+        thumbnail_storage_name: string;
+      }>;
+      const databaseUploads = new Set(
+        attachments.flatMap((attachment) => [
+          `uploads/originals/${attachment.storage_name}`,
+          `uploads/thumbnails/${attachment.thumbnail_storage_name}`
+        ])
+      );
+      const manifestUploads = new Set(manifest.uploads.map((upload) => upload.path));
+      if (
+        attachments.length !== manifest.attachmentCount ||
+        databaseUploads.size !== manifestUploads.size ||
+        [...databaseUploads].some((path) => !manifestUploads.has(path))
+      ) {
+        throw new Error('Backup attachments do not match the manifest');
+      }
+    } finally {
+      stagedDatabase.close();
     }
     for (const upload of manifest.uploads) {
       validateEntryName(upload.path);

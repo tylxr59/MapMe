@@ -111,6 +111,7 @@ export interface SafeClientConfig {
   tileUrl: string;
   tileAttribution: string;
   tileMaxZoom: number;
+  tileProxyEnabled: boolean;
   geocodingEnabled: boolean;
   geocodingAutocomplete: boolean;
   uploadMaxFileSizeMb: number;

@@ -219,7 +219,7 @@
       >
     </div>
     <div class="preview-table">
-      {#each preview.records as record}
+      {#each preview.records as record (record.index)}
         <label class:invalid={!record.valid} class:duplicate={Boolean(record.duplicateOf)}>
           <input
             type="checkbox"
@@ -266,7 +266,7 @@
   >
   {#if backupMessage}<p class="message">{backupMessage}</p>{/if}
   <div class="backup-list">
-    {#each data.backups as backup}
+    {#each data.backups as backup (backup.id)}
       <div>
         <span
           ><strong>{backup.filename}</strong><small

@@ -8,7 +8,6 @@
     Download,
     Edit3,
     ExternalLink,
-    Heart,
     ImagePlus,
     Link2,
     LocateFixed,
@@ -162,8 +161,13 @@
     <button type="button" onclick={onclose} class="icon-button" aria-label="Close details"
       ><X /></button
     >
-    <div class="badges">
-      <span>{place.list.name}</span>
+    <div class="hero-meta">
+      <div class="badges">
+        <span>{place.list.name}</span>
+        {#if place.isArchived}<span><Archive size={14} /> Archived</span>{/if}
+        {#if place.rating}<span><Star size={14} fill="currentColor" /> {place.rating}/5</span>{/if}
+        {#if place.dateVisited}<span><CalendarDays size={14} /> {place.dateVisited}</span>{/if}
+      </div>
       <button
         type="button"
         class="favorite-toggle"
@@ -173,11 +177,8 @@
         onclick={toggleFavorite}
         disabled={favoriteBusy}
       >
-        <Heart size={14} fill={place.isFavorite ? 'currentColor' : 'none'} /> Favorite
+        <Star size={16} fill={place.isFavorite ? 'currentColor' : 'none'} /> Favorite
       </button>
-      {#if place.isArchived}<span><Archive size={14} /> Archived</span>{/if}
-      {#if place.rating}<span><Star size={14} fill="currentColor" /> {place.rating}/5</span>{/if}
-      {#if place.dateVisited}<span><CalendarDays size={14} /> {place.dateVisited}</span>{/if}
     </div>
   </header>
 
@@ -213,7 +214,7 @@
           <h3>Links</h3>
         </div>
         <div class="link-list">
-          {#each place.links as link}
+          {#each place.links as link (link.id)}
             <a href={link.url} target="_blank" rel="noreferrer noopener">
               <span>
                 {#if link.title}<strong>{link.title}</strong>{/if}
@@ -257,7 +258,7 @@
       {#if photoMessage}<p class="photo-error" role="alert">{photoMessage}</p>{/if}
       {#if place.attachments.length}
         <div class="photos">
-          {#each place.attachments as photo}
+          {#each place.attachments as photo (photo.id)}
             <figure>
               <img src={photo.thumbnailUrl} alt={photo.originalName} />
               <figcaption>
@@ -304,7 +305,7 @@
     position: relative;
     display: grid;
     gap: 0.9rem;
-    padding: 1.15rem 3.75rem 1rem 1.15rem;
+    padding: 1.15rem 1.15rem 1rem;
     border-bottom: 1px solid var(--line);
     background: var(--cream);
   }
@@ -312,6 +313,7 @@
     display: flex;
     align-items: center;
     gap: 0.85rem;
+    padding-right: 2.6rem;
   }
   .category {
     width: 3rem;
@@ -382,12 +384,13 @@
   }
 
   .badges {
+    min-width: 0;
+    flex: 1;
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
   }
-  .badges span,
-  .badges button {
+  .badges span {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
@@ -399,20 +402,44 @@
     font-weight: 750;
     text-transform: capitalize;
   }
-  .badges button {
-    border: 0;
+  .hero-meta {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .favorite-toggle {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    min-height: 1.9rem;
+    gap: 0.32rem;
+    padding: 0.38rem 0.7rem;
+    font-size: 0.74rem;
+    font-weight: 750;
     cursor: pointer;
   }
-  .badges button:hover,
-  .badges button.active {
+  .favorite-toggle:hover {
     background: var(--surface-selected);
     color: var(--green-800);
   }
-  .badges button:focus-visible {
+  .favorite-toggle.active,
+  .favorite-toggle.active:hover {
+    border-color: #e0ad00;
+    background: var(--warning-bg);
+    color: var(--warning-text);
+  }
+  .favorite-toggle.active :global(svg) {
+    color: #e0ad00;
+  }
+  .favorite-toggle:focus-visible {
     outline: 3px solid var(--focus-ring);
     outline-offset: 2px;
   }
-  .badges button:disabled {
+  .favorite-toggle:disabled {
     opacity: 0.6;
     cursor: wait;
   }

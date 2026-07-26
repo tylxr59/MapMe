@@ -54,7 +54,7 @@
   </label>
 
   <div class="icon-results" role="listbox" aria-label="Matching icons">
-    {#each matches as icon}
+    {#each matches as icon (icon)}
       <button
         type="button"
         class:selected={value === icon}

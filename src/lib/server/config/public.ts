@@ -13,6 +13,7 @@ export function getPublicConfig(): SafeClientConfig {
     tileUrl: privateConfig.tileProxyEnabled ? '/api/tiles/{z}/{x}/{y}' : privateConfig.tileUrl,
     tileAttribution: privateConfig.tileAttribution,
     tileMaxZoom: privateConfig.tileMaxZoom,
+    tileProxyEnabled: privateConfig.tileProxyEnabled,
     geocodingEnabled: privateConfig.geocodingEnabled,
     geocodingAutocomplete: privateConfig.geocodingAutocomplete,
     uploadMaxFileSizeMb: privateConfig.uploadMaxFileSizeMb,

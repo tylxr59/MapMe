@@ -3,7 +3,10 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 
-export async function activatePendingRestore() {
+/**
+ * @param {{ afterPhase?: (phase: string) => void | Promise<void> }} [options]
+ */
+export async function activatePendingRestore(options = {}) {
   const databasePath = resolve(process.env.DATABASE_PATH || '/data/database.sqlite');
   const uploadPath = resolve(process.env.UPLOAD_PATH || '/data/uploads');
   const backupPath = resolve(process.env.BACKUP_PATH || '/data/backups');
@@ -21,9 +24,11 @@ export async function activatePendingRestore() {
   }
   const rollbackDirectory = join(backupPath, `rollback-${marker.token}`);
   await mkdir(rollbackDirectory, { recursive: true, mode: 0o700 });
+  /** @param {string} phase */
   const saveMarker = async (phase) => {
     marker.phase = phase;
     await writeFile(markerPath, JSON.stringify(marker, null, 2), { mode: 0o600 });
+    await options.afterPhase?.(phase);
   };
 
   if (marker.phase === 'pending') {
@@ -61,8 +66,10 @@ export async function activatePendingRestore() {
     try {
       database.exec('PRAGMA foreign_keys = ON');
       database.exec('DELETE FROM auth_sessions');
-      const integrity = database.prepare('PRAGMA integrity_check').get();
-      if (integrity.integrity_check !== 'ok')
+      const integrity = /** @type {{ integrity_check: string } | undefined} */ (
+        database.prepare('PRAGMA integrity_check').get()
+      );
+      if (!integrity || integrity.integrity_check !== 'ok')
         throw new Error('Activated database failed integrity check');
     } finally {
       database.close();

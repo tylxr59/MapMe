@@ -109,7 +109,7 @@
                   <label>
                     <span>Move places to</span>
                     <select name="replacementId" required>
-                      {#each data.lists.filter((item) => item.id !== list.id) as replacement}
+                      {#each data.lists.filter((item) => item.id !== list.id) as replacement (replacement.id)}
                         <option value={replacement.id}>{replacement.name}</option>
                       {/each}
                     </select>

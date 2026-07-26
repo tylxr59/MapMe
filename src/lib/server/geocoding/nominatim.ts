@@ -45,12 +45,16 @@ function normalizeResults(value: unknown): GeocodingResult[] {
   const rows = Array.isArray(value) ? value : value && typeof value === 'object' ? [value] : [];
   return rows
     .slice(0, 8)
-    .map((row: any) => ({
-      displayName: String(row.display_name ?? '').slice(0, 500),
-      latitude: Number(row.lat),
-      longitude: Number(row.lon),
-      type: row.type ? String(row.type).slice(0, 100) : null
-    }))
+    .map((row) => {
+      const record =
+        row && typeof row === 'object' ? (row as Record<string, unknown>) : Object.create(null);
+      return {
+        displayName: String(record.display_name ?? '').slice(0, 500),
+        latitude: Number(record.lat),
+        longitude: Number(record.lon),
+        type: record.type ? String(record.type).slice(0, 100) : null
+      };
+    })
     .filter(
       (row) =>
         row.displayName &&

@@ -47,6 +47,21 @@ export function attachmentsForPlace(
   return rows.map(mapAttachment);
 }
 
+export function allAttachmentsByPlace(
+  database: DatabaseSync = getDatabase()
+): Map<string, AttachmentDTO[]> {
+  const rows = database
+    .prepare('SELECT * FROM attachments ORDER BY place_id, sort_order, created_at')
+    .all() as unknown as AttachmentRow[];
+  const attachments = new Map<string, AttachmentDTO[]>();
+  for (const row of rows) {
+    const values = attachments.get(row.place_id) ?? [];
+    values.push(mapAttachment(row));
+    attachments.set(row.place_id, values);
+  }
+  return attachments;
+}
+
 export function attachmentById(
   id: string,
   database: DatabaseSync = getDatabase()

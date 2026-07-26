@@ -45,7 +45,10 @@ export function parseKmlImport(content: string): RawImportCandidate[] {
     }
     if (placemark && name === 'point') placemark.insidePoint = true;
     if (placemark && name === 'data') {
-      placemark.dataName = String((tag.attributes as any).name ?? '').slice(0, 100);
+      placemark.dataName = String((tag.attributes as Record<string, string>).name ?? '').slice(
+        0,
+        100
+      );
     }
     if (name === 'folder') folderStack.push({ depth: elementStack.length, name: '' });
   });

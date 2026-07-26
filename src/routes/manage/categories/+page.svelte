@@ -191,7 +191,7 @@
                   <label>
                     <span>Reassign to</span>
                     <select name="replacementId" required>
-                      {#each data.categories.filter((item) => item.id !== category.id) as replacement}
+                      {#each data.categories.filter((item) => item.id !== category.id) as replacement (replacement.id)}
                         <option value={replacement.id}>{replacement.name}</option>
                       {/each}
                     </select>

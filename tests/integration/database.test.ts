@@ -1,6 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -292,15 +293,70 @@ describe('database and place CRUD', () => {
     const { createSession, deleteSession, sha256, validateSession } =
       await import('$lib/server/auth/sessions');
     const passwordHash = '$argon2id$test-fingerprint';
-    const session = createSession(passwordHash);
-    const stored = getDatabase().prepare('SELECT token_hash FROM auth_sessions').get() as {
-      token_hash: string;
-    };
-    expect(stored.token_hash).toBe(sha256(session.token));
-    expect(stored.token_hash).not.toContain(session.token);
-    expect(validateSession(session.token, passwordHash)).toBe(true);
-    deleteSession(session.token);
-    expect(validateSession(session.token, passwordHash)).toBe(false);
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+      const session = createSession(passwordHash);
+      const stored = getDatabase().prepare('SELECT token_hash FROM auth_sessions').get() as {
+        token_hash: string;
+      };
+      expect(stored.token_hash).toBe(sha256(session.token));
+      expect(stored.token_hash).not.toContain(session.token);
+
+      vi.advanceTimersByTime(20 * 60 * 1000);
+      expect(validateSession(session.token, passwordHash)).toBe(true);
+      const touched = getDatabase()
+        .prepare('SELECT last_seen_at FROM auth_sessions WHERE token_hash = ?')
+        .get(stored.token_hash) as { last_seen_at: string };
+      vi.advanceTimersByTime(60 * 1000);
+      expect(validateSession(session.token, passwordHash)).toBe(true);
+      const throttled = getDatabase()
+        .prepare('SELECT last_seen_at FROM auth_sessions WHERE token_hash = ?')
+        .get(stored.token_hash) as { last_seen_at: string };
+      expect(throttled.last_seen_at).toBe(touched.last_seen_at);
+
+      deleteSession(session.token);
+      expect(validateSession(session.token, passwordHash)).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('exports every place beyond the interactive listing limit without N+1 lookups', async () => {
+    const { getDatabase } = await import('$lib/server/db/driver');
+    const { allPlaceDetails } = await import('$lib/server/export/geojson');
+    const database = getDatabase();
+    const insert = database.prepare(
+      `INSERT INTO places (
+         id, name, normalized_name, latitude, longitude, category_id, list_id,
+         is_favorite, is_archived, extra_properties_json, created_at, updated_at
+       ) VALUES (?, ?, ?, 0, 0, ?, ?, 0, 0, '{}', ?, ?)`
+    );
+    const now = new Date().toISOString();
+    database.exec('BEGIN');
+    try {
+      for (let index = 0; index < 10_001; index++) {
+        const name = `Export scale place ${index}`;
+        insert.run(
+          `20000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+          name,
+          name.toLowerCase(),
+          '00000000-0000-4000-8000-000000000008',
+          savedListId,
+          now,
+          now
+        );
+      }
+      database.exec('COMMIT');
+    } catch (error) {
+      database.exec('ROLLBACK');
+      throw error;
+    }
+    try {
+      expect(allPlaceDetails()).toHaveLength(10_001);
+    } finally {
+      database.prepare("DELETE FROM places WHERE id LIKE '20000000-%'").run();
+    }
   });
 
   it('creates a consistent backup that passes restore inspection', async () => {
@@ -308,10 +364,138 @@ describe('database and place CRUD', () => {
     const { inspectRestore } = await import('$lib/server/backup/restore');
     const created = await createBackup();
     expect(created.manifest.schemaVersion).toBe(3);
-    const archive = readFileSync(backupPath(created.id));
-    const inspection = await inspectRestore(
-      new File([archive], created.filename, { type: 'application/zip' })
-    );
+    const inspection = await inspectRestore(backupPath(created.id));
     expect(inspection.manifest.database.sha256).toBe(created.manifest.database.sha256);
+  });
+
+  it('rejects corrupted backups during restore inspection', async () => {
+    const { createBackup, backupPath } = await import('$lib/server/backup/create');
+    const { inspectRestore } = await import('$lib/server/backup/restore');
+    const created = await createBackup();
+    const contents = readFileSync(backupPath(created.id));
+    contents[Math.floor(contents.length / 2)] ^= 0xff;
+    const corruptedPath = join(directory, 'corrupted-backup.zip');
+    await writeFile(corruptedPath, contents);
+    try {
+      await expect(inspectRestore(corruptedPath)).rejects.toThrow();
+    } finally {
+      await rm(corruptedPath, { force: true });
+    }
+  });
+
+  it('rejects corrupt photos and serializes attachment deletion with backups', async () => {
+    const { createPlace, deletePlace } = await import('$lib/server/services/places');
+    const { processPhoto, removePhoto } = await import('$lib/server/storage/photos');
+    const { storagePaths } = await import('$lib/server/storage/paths');
+    const { createBackup, backupPath } = await import('$lib/server/backup/create');
+    const { inspectRestore } = await import('$lib/server/backup/restore');
+    const place = createPlace({
+      name: 'Photo concurrency test',
+      latitude: 40,
+      longitude: -74,
+      address: null,
+      description: null,
+      categoryId: '00000000-0000-4000-8000-000000000008',
+      listId: savedListId,
+      isFavorite: false,
+      isArchived: false,
+      rating: null,
+      dateVisited: null,
+      links: [],
+      extraProperties: {}
+    });
+    const corruptPath = join(storagePaths.uploadStaging, 'corrupt-photo.upload');
+    await writeFile(corruptPath, 'not an image');
+    await expect(
+      processPhoto(place.id, {
+        path: corruptPath,
+        originalName: 'corrupt.png',
+        declaredMime: 'image/png',
+        bytes: 12
+      })
+    ).rejects.toThrow('Only JPEG, PNG, and WebP');
+
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      'base64'
+    );
+    const validPath = join(storagePaths.uploadStaging, 'valid-photo.upload');
+    await writeFile(validPath, png);
+    const attachment = await processPhoto(place.id, {
+      path: validPath,
+      originalName: 'pixel.png',
+      declaredMime: 'image/png',
+      bytes: png.length
+    });
+    const backupPromise = createBackup();
+    const removalPromise = removePhoto(attachment.id);
+    const backup = await backupPromise;
+    await removalPromise;
+    const inspection = await inspectRestore(backupPath(backup.id));
+    expect(inspection.manifest.attachmentCount).toBe(1);
+    await deletePlace(place.id);
+  });
+
+  it('streams browser restore uploads to staging storage', async () => {
+    const { streamRestoreUpload } = await import('$lib/server/backup/upload');
+    const form = new FormData();
+    form.set('file', new File(['streamed restore'], 'backup.zip', { type: 'application/zip' }));
+    const upload = await streamRestoreUpload(
+      new Request('http://localhost/api/restore/inspect', { method: 'POST', body: form })
+    );
+    try {
+      expect(readFileSync(upload.path, 'utf8')).toBe('streamed restore');
+      expect(upload.bytes).toBe(16);
+    } finally {
+      await rm(upload.path, { force: true });
+    }
+  });
+
+  it('enforces photo upload byte limits while streaming', async () => {
+    const { privateConfig } = await import('$lib/server/config/private');
+    const { streamSinglePhoto } = await import('$lib/server/storage/uploads');
+    const form = new FormData();
+    form.set(
+      'photo',
+      new File(
+        [Buffer.alloc(privateConfig.uploadMaxFileSizeMb * 1024 * 1024 + 1)],
+        'oversized.png',
+        { type: 'image/png' }
+      )
+    );
+    await expect(
+      streamSinglePhoto(
+        new Request('http://localhost/api/places/id/attachments', {
+          method: 'POST',
+          body: form
+        })
+      )
+    ).rejects.toThrow('configured size limit');
+  });
+
+  it('activates a staged restore and reopens the restored database', async () => {
+    const { createBackup, backupPath } = await import('$lib/server/backup/create');
+    const { confirmRestore, inspectRestore } = await import('$lib/server/backup/restore');
+    const { closeDatabase, getDatabase } = await import('$lib/server/db/driver');
+    const { activatePendingRestore } = await import('../../scripts/activate-restore.mjs');
+    const created = await createBackup();
+    const inspection = await inspectRestore(backupPath(created.id));
+    await confirmRestore(inspection.token);
+    closeDatabase();
+    await expect(
+      activatePendingRestore({
+        afterPhase: (phase) => {
+          if (phase === 'database-backed-up') throw new Error('Simulated restart');
+        }
+      })
+    ).rejects.toThrow('Simulated restart');
+    expect(await activatePendingRestore()).toBe(true);
+    expect(
+      (
+        getDatabase()
+          .prepare('SELECT coalesce(max(version), 0) AS version FROM schema_migrations')
+          .get() as { version: number }
+      ).version
+    ).toBe(3);
   });
 });

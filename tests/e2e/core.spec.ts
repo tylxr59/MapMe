@@ -20,6 +20,17 @@ test('completes first-run setup without container configuration', async ({ page 
   await expect(page.locator('.leaflet-container')).toBeVisible();
 });
 
+test('rejects cross-origin form mutations', async ({ request }) => {
+  const response = await request.post('/?/favoritePlace', {
+    headers: { origin: 'https://attacker.example' },
+    form: {
+      id: '00000000-0000-4000-8000-000000000000',
+      isFavorite: 'true'
+    }
+  });
+  expect(response.status()).toBe(403);
+});
+
 test('centers the initial map on the user location', async ({ page, context }) => {
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 42.3601, longitude: -71.0589 });
@@ -37,6 +48,27 @@ test('centers the initial map on the user location', async ({ page, context }) =
       center: [42.3601, -71.0589],
       zoom: 13
     });
+});
+
+test('explains that the tile proxy is starting during the initial map load', async ({ page }) => {
+  let releaseTiles: () => void = () => {};
+  const tileGate = new Promise<void>((resolve) => {
+    releaseTiles = resolve;
+  });
+
+  await page.route('**/api/tiles/**', async (route) => {
+    await tileGate;
+    await route.continue();
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const status = page.getByTestId('tile-status');
+  await expect(status).toContainText('Starting map tile service');
+  await expect(status).toContainText('tile proxy starts');
+
+  releaseTiles();
+  await expect(page.locator('img.leaflet-tile').first()).toBeVisible();
+  await expect(status).toBeHidden();
 });
 
 test('routes tile requests through the same-origin proxy', async ({ page }) => {

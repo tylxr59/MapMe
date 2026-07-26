@@ -1,9 +1,9 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { PlaceDetail, PlaceFilters, PlaceSummary } from '$lib/types';
 import { getDatabase } from '../driver';
-import { attachmentsForPlace } from './attachments';
+import { allAttachmentsByPlace, attachmentsForPlace } from './attachments';
 import { mapCategory } from './categories';
-import { linksForPlace } from './links';
+import { allLinksByPlace, linksForPlace } from './links';
 import { mapList } from './lists';
 import { safeFtsQuery } from './search';
 
@@ -153,6 +153,41 @@ export function getPlace(id: string, database: DatabaseSync = getDatabase()): Pl
     createdAt: row.created_at ?? row.updated_at,
     attachments: attachmentsForPlace(id, database)
   };
+}
+
+export function allPlaceDetails(database: DatabaseSync = getDatabase()): PlaceDetail[] {
+  const rows = database
+    .prepare(
+      `SELECT
+         p.*, c.name AS category_name, c.icon_name, c.color, c.sort_order, c.is_system,
+         l.name AS list_name, l.sort_order AS list_sort_order, l.is_system AS list_is_system,
+         0 AS attachment_count
+       FROM places p
+       JOIN categories c ON c.id = p.category_id
+       JOIN lists l ON l.id = p.list_id
+       ORDER BY p.name COLLATE NOCASE, p.id`
+    )
+    .all() as unknown as PlaceRow[];
+  const links = allLinksByPlace(database);
+  const attachments = allAttachmentsByPlace(database);
+  return rows.map((row) => {
+    const placeAttachments = attachments.get(row.id) ?? [];
+    const summary = { ...mapSummary(row), attachmentCount: placeAttachments.length };
+    let extraProperties: Record<string, unknown>;
+    try {
+      extraProperties = JSON.parse(row.extra_properties_json ?? '{}') as Record<string, unknown>;
+    } catch {
+      extraProperties = {};
+    }
+    return {
+      ...summary,
+      description: row.description ?? null,
+      links: links.get(row.id) ?? [],
+      extraProperties,
+      createdAt: row.created_at ?? row.updated_at,
+      attachments: placeAttachments
+    };
+  });
 }
 
 export function findDuplicatePlace(
