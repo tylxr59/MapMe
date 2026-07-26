@@ -129,160 +129,165 @@
     }}
   >
     {#if place}<input type="hidden" name="id" value={place.id} />{/if}
-    <label class="wide"
-      >Name <input
-        name="name"
-        required
-        maxlength="200"
-        value={place?.name ?? ''}
-        placeholder="What is this place?"
-      /></label
-    >
-
-    <div class="coordinate-grid">
-      <label
-        >Latitude
-        <input
-          name="latitude"
-          type="number"
-          step="any"
-          min="-90"
-          max="90"
-          bind:value={latitude}
-          oninput={coordinatesChanged}
+    <div class="fields">
+      <label class="wide"
+        >Name <input
+          name="name"
           required
-        />
-      </label>
-      <label
-        >Longitude
-        <input
-          name="longitude"
-          type="number"
-          step="any"
-          min="-180"
-          max="180"
-          bind:value={longitude}
-          oninput={coordinatesChanged}
-          required
-        />
-      </label>
-      {#if config.geocodingEnabled}
-        <button
-          type="button"
-          class="coordinate-lookup"
-          onclick={reverseGeocode}
-          disabled={geocoding}
-          title="Look up this point"
-          aria-label="Look up address for these coordinates"
-        >
-          {#if geocoding}<LoaderCircle class="spin" size={18} />{:else}<LocateFixed
-              size={18}
-            />{/if}
-        </button>
-      {:else}
-        <LocateFixed size={18} aria-label="Coordinates update the draft marker" />
-      {/if}
-    </div>
+          maxlength="200"
+          value={place?.name ?? ''}
+          placeholder="What is this place?"
+        /></label
+      >
 
-    {#if config.geocodingEnabled}
-      <div class="geocoder">
-        <label class="wide"
-          >Find an address or POI
-          <div class="search-box">
-            <input
-              bind:value={geocodeQuery}
-              placeholder="Search OpenStreetMap…"
-              onkeydown={(event) =>
-                event.key === 'Enter' && (event.preventDefault(), searchAddress())}
-            />
-            <button
-              type="button"
-              onclick={() => searchAddress()}
-              disabled={geocoding || geocodeQuery.trim().length < 3}
-            >
-              {#if geocoding}<LoaderCircle class="spin" size={16} />{:else}<Search size={16} />{/if}
-              Search
-            </button>
-          </div>
+      <div class="coordinate-grid">
+        <label
+          >Latitude
+          <input
+            name="latitude"
+            type="number"
+            step="any"
+            min="-90"
+            max="90"
+            bind:value={latitude}
+            oninput={coordinatesChanged}
+            required
+          />
         </label>
-        {#if geocodeError}<p class="field-error">{geocodeError}</p>{/if}
-        {#if geocodeResults.length}
-          <div class="geocode-results">
-            {#each geocodeResults as result}
-              <button type="button" onclick={() => chooseGeocode(result)}
-                >{result.displayName}</button
-              >
-            {/each}
-            <small>Search data © OpenStreetMap contributors</small>
-          </div>
+        <label
+          >Longitude
+          <input
+            name="longitude"
+            type="number"
+            step="any"
+            min="-180"
+            max="180"
+            bind:value={longitude}
+            oninput={coordinatesChanged}
+            required
+          />
+        </label>
+        {#if config.geocodingEnabled}
+          <button
+            type="button"
+            class="coordinate-lookup"
+            onclick={reverseGeocode}
+            disabled={geocoding}
+            title="Look up this point"
+            aria-label="Look up address for these coordinates"
+          >
+            {#if geocoding}<LoaderCircle class="spin" size={18} />{:else}<LocateFixed
+                size={18}
+              />{/if}
+          </button>
+        {:else}
+          <LocateFixed size={18} aria-label="Coordinates update the draft marker" />
         {/if}
       </div>
-    {/if}
 
-    <label class="wide"
-      >Address <input
-        name="address"
-        maxlength="500"
-        bind:value={address}
-        placeholder="Optional manual address"
-      /></label
-    >
-    <label
-      >Category
-      <select name="categoryId" required value={place?.category.id ?? categories.at(-1)?.id}>
-        {#each categories as category}<option value={category.id}>{category.name}</option>{/each}
-      </select>
-    </label>
-    <label
-      >Status
-      <select name="status" value={place?.status ?? 'saved'}>
-        <option value="saved">Saved</option>
-        <option value="want_to_go">Want to go</option>
-        <option value="visited">Visited</option>
-      </select>
-    </label>
-    <label
-      >Rating
-      <select name="rating" value={place?.rating ?? ''}>
-        <option value="">Not rated</option>
-        <option value="1">1 star</option>
-        <option value="2">2 stars</option>
-        <option value="3">3 stars</option>
-        <option value="4">4 stars</option>
-        <option value="5">5 stars</option>
-      </select>
-    </label>
-    <label
-      >Date visited <input name="dateVisited" type="date" value={place?.dateVisited ?? ''} /></label
-    >
-    <label class="wide"
-      >Source URL <input
-        name="sourceUrl"
-        type="url"
-        maxlength="2048"
-        value={place?.sourceUrl ?? ''}
-        placeholder="https://…"
-      /></label
-    >
-    <label class="wide"
-      >Notes
-      <textarea
-        name="description"
-        maxlength="20000"
-        rows="5"
-        placeholder="What do you want to remember?">{place?.description ?? ''}</textarea
+      {#if config.geocodingEnabled}
+        <div class="geocoder">
+          <label class="wide"
+            >Find an address or POI
+            <div class="search-box">
+              <input
+                bind:value={geocodeQuery}
+                placeholder="Search OpenStreetMap…"
+                onkeydown={(event) =>
+                  event.key === 'Enter' && (event.preventDefault(), searchAddress())}
+              />
+              <button
+                type="button"
+                onclick={() => searchAddress()}
+                disabled={geocoding || geocodeQuery.trim().length < 3}
+              >
+                {#if geocoding}<LoaderCircle class="spin" size={16} />{:else}<Search
+                    size={16}
+                  />{/if}
+                Search
+              </button>
+            </div>
+          </label>
+          {#if geocodeError}<p class="field-error">{geocodeError}</p>{/if}
+          {#if geocodeResults.length}
+            <div class="geocode-results">
+              {#each geocodeResults as result}
+                <button type="button" onclick={() => chooseGeocode(result)}
+                  >{result.displayName}</button
+                >
+              {/each}
+              <small>Search data © OpenStreetMap contributors</small>
+            </div>
+          {/if}
+        </div>
+      {/if}
+
+      <label class="wide"
+        >Address <input
+          name="address"
+          maxlength="500"
+          bind:value={address}
+          placeholder="Optional manual address"
+        /></label
       >
-    </label>
-    <div class="states wide">
-      <label class="check"
-        ><input type="checkbox" name="isFavorite" checked={place?.isFavorite} /> Favorite</label
+      <label
+        >Category
+        <select name="categoryId" required value={place?.category.id ?? categories.at(-1)?.id}>
+          {#each categories as category}<option value={category.id}>{category.name}</option>{/each}
+        </select>
+      </label>
+      <label
+        >Status
+        <select name="status" value={place?.status ?? 'saved'}>
+          <option value="saved">Saved</option>
+          <option value="want_to_go">Want to go</option>
+          <option value="visited">Visited</option>
+        </select>
+      </label>
+      <label
+        >Rating
+        <select name="rating" value={place?.rating ?? ''}>
+          <option value="">Not rated</option>
+          <option value="1">1 star</option>
+          <option value="2">2 stars</option>
+          <option value="3">3 stars</option>
+          <option value="4">4 stars</option>
+          <option value="5">5 stars</option>
+        </select>
+      </label>
+      <label
+        >Date visited
+        <input name="dateVisited" type="date" value={place?.dateVisited ?? ''} /></label
       >
-      <label class="check"
-        ><input type="checkbox" name="isArchived" checked={place?.isArchived} /> Archived</label
+      <label class="wide"
+        >Source URL <input
+          name="sourceUrl"
+          type="url"
+          maxlength="2048"
+          value={place?.sourceUrl ?? ''}
+          placeholder="https://…"
+        /></label
       >
+      <label class="wide"
+        >Notes
+        <textarea
+          name="description"
+          maxlength="20000"
+          rows="5"
+          placeholder="What do you want to remember?">{place?.description ?? ''}</textarea
+        >
+      </label>
+      <div class="states wide">
+        <label class="check"
+          ><input type="checkbox" name="isFavorite" checked={place?.isFavorite} /> Favorite</label
+        >
+        <label class="check"
+          ><input type="checkbox" name="isArchived" checked={place?.isArchived} /> Archived</label
+        >
+      </div>
     </div>
-    <footer class="wide">
-      <button type="button" class="secondary" onclick={onclose}>Cancel</button>
+    <footer>
+      <button type="button" class="secondary" onclick={onclose}><X size={16} /> Cancel</button>
       <button type="submit" class="primary"
         ><Check size={17} /> {place ? 'Save changes' : 'Save place'}</button
       >
@@ -293,13 +298,14 @@
 <style>
   .editor {
     height: 100%;
-    overflow: auto;
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
     background: var(--cream);
   }
   header {
-    position: sticky;
-    top: 0;
-    z-index: 2;
+    flex: 0 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: start;
@@ -326,10 +332,19 @@
     padding: 0.35rem;
   }
   form {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .fields {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.85rem;
-    padding: 1rem 1.1rem 2rem;
+    padding: 1rem 1.1rem 1.25rem;
   }
   label {
     display: grid;
@@ -361,7 +376,6 @@
     line-height: 1.45;
   }
   .wide,
-  footer,
   .states,
   .geocoder,
   .coordinate-grid {
@@ -407,10 +421,13 @@
     gap: 1rem;
   }
   footer {
+    flex: 0 0 auto;
     display: flex;
-    justify-content: flex-end;
-    gap: 0.65rem;
-    padding-top: 0.3rem;
+    gap: 0.5rem;
+    padding: 0.8rem 1rem;
+    border-top: 1px solid var(--line);
+    background: var(--cream);
+    box-shadow: 0 -6px 18px var(--shadow-soft);
   }
   footer button,
   .search-box button {
@@ -421,7 +438,11 @@
     border: 0;
     border-radius: 0.6rem;
     padding: 0.65rem 0.85rem;
+    font-size: 0.8rem;
     font-weight: 750;
+  }
+  footer .primary {
+    flex: 1;
   }
   .primary,
   .search-box button {

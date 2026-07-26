@@ -9,9 +9,7 @@
 <svelte:head><title>General settings · MapMe</title></svelte:head>
 
 <div class="heading">
-  <span>Instance</span>
   <h1>General settings</h1>
-  <p>Manage how you reach MapMe and who can open it.</p>
 </div>
 
 <form method="POST" use:enhance>
@@ -38,7 +36,6 @@
       <ShieldCheck size={21} />
       <div>
         <h2>Access protection</h2>
-        <p>Changes take effect as soon as you save.</p>
       </div>
     </div>
     <div class="choices">
@@ -112,17 +109,9 @@
   .heading {
     margin-bottom: 1.5rem;
   }
-  .heading > span {
-    color: var(--green-700);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
   h1 {
-    margin: 0.2rem 0 0.35rem;
+    margin: 0;
   }
-  .heading p,
   .section-heading p {
     margin: 0;
     color: var(--text-secondary);

@@ -64,15 +64,6 @@
           <option value="5">5 stars</option>
         </select>
       </label>
-      <label
-        >Sort
-        <select name="sort" value={filters.sort}>
-          <option value="updated_desc">Recently updated</option>
-          <option value="name_asc">Name</option>
-          <option value="rating_desc">Rating</option>
-          <option value="visited_desc">Date visited</option>
-        </select>
-      </label>
       <label class="check"
         ><input type="checkbox" name="favorite" value="true" checked={filters.favorite === true} /> Favorites
         only</label

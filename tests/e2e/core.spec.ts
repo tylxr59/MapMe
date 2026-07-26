@@ -144,7 +144,23 @@ test('adds a place with direct coordinates and copies them from its details', as
     )
     .toBeLessThan(15);
 
+  const mapPane = page.locator('.map-pane');
+  const mapWidthWithoutPanel = await mapPane.evaluate(
+    (element) => element.getBoundingClientRect().width
+  );
   await page.locator('.place-row').filter({ hasText: secondEdit }).click();
+  const detailsPanel = page.locator('.panel');
+  await expect(detailsPanel).toBeVisible();
+  await expect
+    .poll(() => mapPane.evaluate((element) => element.getBoundingClientRect().width))
+    .toBeLessThan(mapWidthWithoutPanel - 400);
+  const reservedPanelWidth = await detailsPanel.evaluate(
+    (element) => element.getBoundingClientRect().width
+  );
+  const mapWidthWithPanel = await mapPane.evaluate(
+    (element) => element.getBoundingClientRect().width
+  );
+  expect(mapWidthWithoutPanel - mapWidthWithPanel).toBeCloseTo(reservedPanelWidth, 0);
   await expect
     .poll(() =>
       page.evaluate(() => {

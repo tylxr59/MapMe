@@ -99,7 +99,7 @@ describe('database and place CRUD', () => {
     expect(getPlace(created.id)).toBeNull();
   });
 
-  it('keeps favorites at the top of the places list for every sort', async () => {
+  it('orders places by favorite, rating, then name', async () => {
     const { createPlace, deletePlace } = await import('$lib/server/services/places');
     const { listPlaces } = await import('$lib/server/db/queries/places');
     const base = {
@@ -114,17 +114,35 @@ describe('database and place CRUD', () => {
       sourceUrl: null,
       extraProperties: {}
     };
-    const favorite = createPlace({
+    const favoriteFiveZulu = createPlace({
       ...base,
-      name: 'Zulu Favorite',
+      name: 'Zulu Favorite Five',
       isFavorite: true,
-      rating: 1
+      rating: 5
     });
-    const regular = createPlace({
+    const favoriteFiveAlpha = createPlace({
       ...base,
-      name: 'Alpha Regular',
+      name: 'Alpha Favorite Five',
+      isFavorite: true,
+      rating: 5
+    });
+    const favoriteFour = createPlace({
+      ...base,
+      name: 'Favorite Four',
+      isFavorite: true,
+      rating: 4
+    });
+    const regularFive = createPlace({
+      ...base,
+      name: 'Regular Five',
       isFavorite: false,
       rating: 5
+    });
+    const regularUnrated = createPlace({
+      ...base,
+      name: 'Regular Unrated',
+      isFavorite: false,
+      rating: null
     });
     const filters = {
       query: '',
@@ -136,30 +154,37 @@ describe('database and place CRUD', () => {
       ratingMin: null
     };
 
-    for (const sort of ['updated_desc', 'name_asc', 'rating_desc', 'visited_desc'] as const) {
-      expect(listPlaces({ ...filters, sort }).map((place) => place.id)).toEqual([
-        favorite.id,
-        regular.id
-      ]);
-    }
+    expect(listPlaces({ ...filters, sort: 'rating_desc' }).map((place) => place.id)).toEqual([
+      favoriteFiveAlpha.id,
+      favoriteFiveZulu.id,
+      favoriteFour.id,
+      regularFive.id,
+      regularUnrated.id
+    ]);
 
-    await deletePlace(favorite.id);
-    await deletePlace(regular.id);
+    for (const place of [
+      favoriteFiveZulu,
+      favoriteFiveAlpha,
+      favoriteFour,
+      regularFive,
+      regularUnrated
+    ]) {
+      await deletePlace(place.id);
+    }
   });
 
-  it('reorders categories atomically while keeping Other last', async () => {
+  it('lists categories alphabetically while keeping Other last', async () => {
     const { listCategories } = await import('$lib/server/db/queries/categories');
-    const { reorderCategories } = await import('$lib/server/services/categories');
-    const original = listCategories();
-    const reversedIds = original.map((category) => category.id).reverse();
-    const systemId = original.find((category) => category.isSystem)?.id;
-    const expectedIds = [...reversedIds.filter((id) => id !== systemId), systemId!];
-
-    reorderCategories(reversedIds);
-    expect(listCategories().map((category) => category.id)).toEqual(expectedIds);
-    expect(() => reorderCategories(reversedIds.slice(1))).toThrow('Category order is incomplete');
-
-    reorderCategories(original.map((category) => category.id));
+    expect(listCategories().map((category) => category.name)).toEqual([
+      'Coffee',
+      'Entertainment',
+      'Hiking',
+      'Photography',
+      'Restaurant',
+      'Scenic',
+      'Shopping',
+      'Other'
+    ]);
   });
 
   it('stores only session token hashes and supports revocation', async () => {

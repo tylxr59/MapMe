@@ -1,15 +1,11 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { tick } from 'svelte';
-  import type { SubmitFunction } from '@sveltejs/kit';
   import {
     AlertTriangle,
     CheckCircle2,
     ChevronDown,
-    GripVertical,
     LockKeyhole,
     MapPinned,
-    Pencil,
     Plus,
     Save,
     Trash2,
@@ -24,132 +20,23 @@
   let newColor = $state('#26734C');
   let draftIcons = $state<Record<string, string>>({});
   let draftColors = $state<Record<string, string>>({});
-  let orderedCategories = $state<typeof data.categories>([]);
-  let draggedId = $state<string | null>(null);
-  let dragStartOrder = $state<typeof data.categories>([]);
-  let dragWasDropped = $state(false);
-  let savingOrder = $state(false);
-  let pendingPreviousOrder = $state<typeof data.categories>([]);
-  let orderValue = $state('');
-  let reorderForm: HTMLFormElement;
-  let serverCategorySignature = $state('');
 
   const categoryIcon = (id: string, fallback: string) => draftIcons[id] ?? fallback;
   const categoryColor = (id: string, fallback: string) => draftColors[id] ?? fallback;
   const placeLabel = (count: number) => `${count} ${count === 1 ? 'place' : 'places'}`;
-  const withSystemCategoryLast = (categories: typeof data.categories) => [
-    ...categories.filter((category) => !category.isSystem),
-    ...categories.filter((category) => category.isSystem)
-  ];
   const totalPlaces = () =>
     data.categories.reduce(
       (total: number, category: (typeof data.categories)[number]) =>
         total + (category.placeCount ?? 0),
       0
     );
-
-  $effect(() => {
-    const signature = JSON.stringify(
-      data.categories.map((category: (typeof data.categories)[number]) => [
-        category.id,
-        category.name,
-        category.iconName,
-        category.color,
-        category.sortOrder,
-        category.placeCount
-      ])
-    );
-    if (signature !== serverCategorySignature && !draggedId && !savingOrder) {
-      serverCategorySignature = signature;
-      orderedCategories = withSystemCategoryLast(data.categories);
-    }
-  });
-
-  const enhanceOrder: SubmitFunction = () => {
-    savingOrder = true;
-    return async ({ result, update }) => {
-      if (result.type !== 'success') orderedCategories = [...pendingPreviousOrder];
-      await update({ reset: false });
-      savingOrder = false;
-    };
-  };
-
-  function moveDraggedCategory(event: DragEvent, targetId: string) {
-    event.preventDefault();
-    if (!draggedId || draggedId === targetId) return;
-
-    const sourceIndex = orderedCategories.findIndex((category) => category.id === draggedId);
-    const targetIndex = orderedCategories.findIndex((category) => category.id === targetId);
-    if (sourceIndex < 0 || targetIndex < 0) return;
-
-    const target = event.currentTarget as HTMLElement;
-    const insertAfter =
-      event.clientY > target.getBoundingClientRect().top + target.offsetHeight / 2;
-    let destinationIndex = targetIndex + (insertAfter ? 1 : 0);
-    const next = [...orderedCategories];
-    const [dragged] = next.splice(sourceIndex, 1);
-    if (sourceIndex < destinationIndex) destinationIndex -= 1;
-    next.splice(destinationIndex, 0, dragged);
-    orderedCategories = withSystemCategoryLast(next);
-  }
-
-  function startDragging(event: DragEvent, id: string) {
-    const category = orderedCategories.find((item) => item.id === id);
-    if (savingOrder || category?.isSystem) {
-      event.preventDefault();
-      return;
-    }
-    draggedId = id;
-    dragStartOrder = [...orderedCategories];
-    dragWasDropped = false;
-    event.dataTransfer?.setData('text/plain', id);
-    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-  }
-
-  function commitOrder(previousOrder: typeof data.categories) {
-    if (savingOrder) return;
-    pendingPreviousOrder = [...previousOrder];
-    orderValue = JSON.stringify(orderedCategories.map((category) => category.id));
-    void tick().then(() => reorderForm.requestSubmit());
-  }
-
-  function dropCategory(event: DragEvent) {
-    event.preventDefault();
-    if (!draggedId) return;
-    dragWasDropped = true;
-    draggedId = null;
-    commitOrder(dragStartOrder);
-  }
-
-  function finishDragging() {
-    if (!dragWasDropped) orderedCategories = [...dragStartOrder];
-    draggedId = null;
-    dragWasDropped = false;
-  }
-
-  function moveWithKeyboard(event: KeyboardEvent, id: string) {
-    if (!['ArrowUp', 'ArrowDown'].includes(event.key) || savingOrder) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const currentIndex = orderedCategories.findIndex((category) => category.id === id);
-    const nextIndex = currentIndex + (event.key === 'ArrowUp' ? -1 : 1);
-    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= orderedCategories.length) return;
-    if (orderedCategories[currentIndex].isSystem || orderedCategories[nextIndex].isSystem) return;
-    const previousOrder = [...orderedCategories];
-    const next = [...orderedCategories];
-    [next[currentIndex], next[nextIndex]] = [next[nextIndex], next[currentIndex]];
-    orderedCategories = next;
-    commitOrder(previousOrder);
-  }
 </script>
 
 <svelte:head><title>Categories · MapMe</title></svelte:head>
 
 <div class="page-heading">
   <div class="heading-copy">
-    <span class="eyebrow">Organization</span>
     <h1>Categories</h1>
-    <p>Give every place a recognizable marker and keep your map easy to scan.</p>
   </div>
 
   <div class="heading-actions">
@@ -189,9 +76,7 @@
         {@html categoryIconSvg(newIcon)}
       </div>
       <div>
-        <span class="section-kicker">New marker</span>
         <h2>Create a category</h2>
-        <p>Choose a short name, icon, and color that will stand out on your map.</p>
       </div>
     </div>
 
@@ -224,54 +109,13 @@
 {/if}
 
 <div class="section-heading">
-  <div>
-    <h2>Your categories</h2>
-    <p>Drag categories into the order you want them to appear across MapMe.</p>
-  </div>
-  <span class:saving={savingOrder}>
-    <GripVertical size={14} />
-    {savingOrder ? 'Saving order…' : 'Drag to reorder'}
-  </span>
+  <h2>Your categories</h2>
 </div>
 
-<form
-  class="reorder-form"
-  method="POST"
-  action="?/reorder"
-  use:enhance={enhanceOrder}
-  bind:this={reorderForm}
-  aria-hidden="true"
->
-  <input type="hidden" name="order" value={orderValue} />
-</form>
-
 <section class="category-list" aria-label="Your categories">
-  {#each orderedCategories as category (category.id)}
-    <details
-      class:dragging={draggedId === category.id}
-      class="category-card"
-      ondragover={(event) => moveDraggedCategory(event, category.id)}
-      ondrop={dropCategory}
-    >
+  {#each data.categories as category (category.id)}
+    <details class="category-card">
       <summary>
-        <span
-          class:locked={category.isSystem}
-          class="drag-handle"
-          draggable={!savingOrder && !category.isSystem}
-          role="button"
-          tabindex={category.isSystem ? -1 : 0}
-          aria-disabled={category.isSystem || savingOrder}
-          aria-label={category.isSystem
-            ? `${category.name} always stays last`
-            : `Drag to reorder ${category.name}. Use arrow keys to move it.`}
-          title={category.isSystem ? 'Always last' : 'Drag to reorder'}
-          ondragstart={(event) => startDragging(event, category.id)}
-          ondragend={finishDragging}
-          onkeydown={(event) => moveWithKeyboard(event, category.id)}
-          onclick={(event) => event.preventDefault()}
-        >
-          <GripVertical size={19} />
-        </span>
         <span class="marker-preview" style:background={categoryColor(category.id, category.color)}>
           {@html categoryIconSvg(categoryIcon(category.id, category.iconName))}
         </span>
@@ -286,7 +130,7 @@
             <span>{placeLabel(category.placeCount ?? 0)}</span>
           </span>
         </span>
-        <span class="edit-affordance"><Pencil size={15} /> Edit <ChevronDown size={16} /></span>
+        <span class="edit-affordance">Edit <ChevronDown size={16} /></span>
       </summary>
 
       <div class="editor">
@@ -382,22 +226,11 @@
     gap: 2rem;
     margin-bottom: 1.5rem;
   }
-  .eyebrow,
-  .section-kicker {
-    color: var(--green-700);
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
   h1 {
-    margin: 0.22rem 0 0.3rem;
+    margin: 0;
     font-size: clamp(1.7rem, 3vw, 2.15rem);
     letter-spacing: -0.035em;
   }
-  .heading-copy p,
-  .create-intro p,
-  .section-heading p,
   .danger-content p,
   .empty-state p {
     color: var(--ink-muted);
@@ -494,12 +327,8 @@
     padding-bottom: 1rem;
   }
   .create-intro h2 {
-    margin: 0.1rem 0 0.2rem;
+    margin: 0;
     font-size: 1.08rem;
-  }
-  .create-intro p,
-  .section-heading p {
-    font-size: 0.8rem;
   }
   .marker-preview {
     width: 2.75rem;
@@ -589,22 +418,8 @@
     margin: 0 0 0.7rem;
   }
   .section-heading h2 {
-    margin: 0 0 0.12rem;
+    margin: 0;
     font-size: 1rem;
-  }
-  .section-heading > span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    color: var(--ink-muted);
-    font-size: 0.72rem;
-    font-weight: 750;
-  }
-  .section-heading > span.saving {
-    color: var(--green-700);
-  }
-  .reorder-form {
-    display: none;
   }
   .category-list {
     display: grid;
@@ -625,11 +440,6 @@
     border-color: color-mix(in srgb, var(--green-700) 35%, var(--line));
     box-shadow: 0 6px 20px var(--shadow-soft);
   }
-  .category-card.dragging {
-    border-color: var(--green-700);
-    opacity: 0.55;
-    box-shadow: 0 10px 28px var(--shadow-panel);
-  }
   .category-card > summary {
     min-height: 4.65rem;
     display: flex;
@@ -649,33 +459,6 @@
     display: grid;
     flex: 1;
     gap: 0.25rem;
-  }
-  .drag-handle {
-    width: 1.65rem;
-    height: 2.4rem;
-    display: grid;
-    flex: 0 0 auto;
-    place-items: center;
-    border-radius: 0.45rem;
-    color: var(--ink-muted);
-    cursor: grab;
-    touch-action: none;
-  }
-  .drag-handle:hover,
-  .drag-handle:focus-visible {
-    background: var(--surface-muted);
-    color: var(--green-700);
-  }
-  .drag-handle:active {
-    cursor: grabbing;
-  }
-  .drag-handle.locked {
-    cursor: default;
-    opacity: 0.45;
-  }
-  .drag-handle.locked:hover {
-    background: transparent;
-    color: var(--ink-muted);
   }
   .category-name {
     display: flex;

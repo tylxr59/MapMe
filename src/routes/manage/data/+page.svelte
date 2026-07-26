@@ -171,9 +171,7 @@
 
 <svelte:head><title>Data · MapMe</title></svelte:head>
 <div class="heading">
-  <span>Ownership</span>
   <h1>Data tools</h1>
-  <p>Move your places in or out, and keep a complete local backup.</p>
 </div>
 
 {#if data.authMode === 'none'}
@@ -193,7 +191,7 @@
   <section class="card">
     <FileSpreadsheet size={22} />
     <h2>CSV</h2>
-    <p>A fixed, editable table. Tags are stored as a JSON array in one cell.</p>
+    <p>A fixed, editable table for moving your place details between tools.</p>
     <a href="/api/exports/places.csv"><Download size={16} /> Export CSV</a>
   </section>
 </div>
@@ -315,19 +313,8 @@
 </section>
 
 <style>
-  .heading span {
-    color: var(--green-700);
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
   h1 {
-    margin: 0.2rem 0;
-  }
-  .heading p {
     margin: 0 0 1.5rem;
-    color: var(--ink-muted);
   }
   .warning {
     margin-bottom: 1rem;

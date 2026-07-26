@@ -33,7 +33,7 @@ export function listCategories(database: DatabaseSync = getDatabase()): Category
          c.id, c.name, c.icon_name, c.color, c.sort_order, c.is_system,
          (SELECT count(*) FROM places p WHERE p.category_id = c.id) AS place_count
        FROM categories c
-       ORDER BY c.is_system, c.sort_order, c.name COLLATE NOCASE`
+       ORDER BY c.is_system, c.name COLLATE NOCASE`
     )
     .all() as unknown as CategoryRow[];
   return rows.map(mapCategory);

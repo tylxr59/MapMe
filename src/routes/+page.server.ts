@@ -16,7 +16,7 @@ export const load: PageServerLoad = ({ url }) => {
     favorite: url.searchParams.get('favorite') ?? undefined,
     archived: url.searchParams.get('archived') ?? undefined,
     ratingMin: url.searchParams.get('ratingMin') ?? null,
-    sort: url.searchParams.get('sort') ?? 'updated_desc'
+    sort: 'rating_desc'
   });
   return {
     categories: listCategories(),

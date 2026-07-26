@@ -18,5 +18,3 @@ export const categoryDeleteSchema = z.object({
   id: uuidSchema,
   replacementId: uuidSchema
 });
-
-export const categoryOrderSchema = z.array(uuidSchema).min(1).max(10_000);

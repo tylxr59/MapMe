@@ -21,6 +21,9 @@
   let locationNotice = $state('');
   let mapCenter = $state({ latitude: 39.5, longitude: -98.35 });
   let locationNoticeTimer: ReturnType<typeof setTimeout> | undefined;
+  let panelOpen = $derived(
+    (editorOpen && Boolean(draft)) || Boolean(selectedPlace) || loadingDetail
+  );
 
   const mapPlaces = $derived(
     data.places.map((place): MapPlace => ({
@@ -209,7 +212,7 @@
       ></button>
     {/if}
 
-    <section class="map-pane" inert={mobileSidebarOpen}>
+    <section class="map-pane" class:panel-open={panelOpen} inert={mobileSidebarOpen}>
       <PlaceMap
         places={mapPlaces}
         {selectedId}
@@ -273,6 +276,7 @@
     overflow: hidden;
   }
   main {
+    --panel-width: min(430px, 42vw);
     position: relative;
     height: 100%;
     min-height: 0;
@@ -445,6 +449,10 @@
     isolation: isolate;
     min-width: 0;
     min-height: 0;
+    transition: margin-right 220ms ease;
+  }
+  .map-pane.panel-open {
+    margin-right: var(--panel-width);
   }
   .map-hint {
     position: absolute;
@@ -467,7 +475,7 @@
     right: 0;
     top: 0;
     bottom: 0;
-    width: min(430px, 42vw);
+    width: var(--panel-width);
     border-left: 1px solid var(--line);
     box-shadow: -16px 0 38px var(--shadow-panel);
     background: var(--cream);
@@ -537,6 +545,9 @@
     .map-pane {
       position: absolute;
       inset: 0;
+    }
+    .map-pane.panel-open {
+      margin-right: 0;
     }
     .map-hint {
       display: none;
