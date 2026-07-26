@@ -10,6 +10,7 @@
     ExternalLink,
     Heart,
     ImagePlus,
+    Link2,
     LocateFixed,
     MapPin,
     Navigation,
@@ -31,10 +32,11 @@
     onedit: () => void;
     onclose: () => void;
     ondeleted: () => void;
-    onchanged: () => void;
+    onchanged: () => void | Promise<void>;
   } = $props();
 
   let deleting = $state(false);
+  let favoriteBusy = $state(false);
   let uploadInput: HTMLInputElement;
   let photoMessage = $state('');
   let uploading = $state(false);
@@ -89,6 +91,20 @@
     body.set('id', place.id);
     const response = await fetch('?/deletePlace', { method: 'POST', body });
     if (response.ok) ondeleted();
+  }
+
+  async function toggleFavorite() {
+    if (favoriteBusy) return;
+    favoriteBusy = true;
+    try {
+      const body = new FormData();
+      body.set('id', place.id);
+      body.set('isFavorite', String(!place.isFavorite));
+      const response = await fetch('?/favoritePlace', { method: 'POST', body });
+      if (response.ok) await onchanged();
+    } finally {
+      favoriteBusy = false;
+    }
   }
 
   async function uploadPhoto(event: Event) {
@@ -147,8 +163,18 @@
       ><X /></button
     >
     <div class="badges">
-      <span>{place.status.replaceAll('_', ' ')}</span>
-      {#if place.isFavorite}<span><Heart size={14} fill="currentColor" /> Favorite</span>{/if}
+      <span>{place.list.name}</span>
+      <button
+        type="button"
+        class="favorite-toggle"
+        class:active={place.isFavorite}
+        aria-pressed={place.isFavorite}
+        aria-label={place.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        onclick={toggleFavorite}
+        disabled={favoriteBusy}
+      >
+        <Heart size={14} fill={place.isFavorite ? 'currentColor' : 'none'} /> Favorite
+      </button>
       {#if place.isArchived}<span><Archive size={14} /> Archived</span>{/if}
       {#if place.rating}<span><Star size={14} fill="currentColor" /> {place.rating}/5</span>{/if}
       {#if place.dateVisited}<span><CalendarDays size={14} /> {place.dateVisited}</span>{/if}
@@ -177,13 +203,28 @@
         <button type="button" class="maps" onclick={sendToMaps}>
           <Navigation size={15} /> Directions
         </button>
-        {#if place.sourceUrl}
-          <a href={place.sourceUrl} target="_blank" rel="noreferrer noopener"
-            ><ExternalLink size={15} /> Source link</a
-          >
-        {/if}
       </div>
     </section>
+
+    {#if place.links.length}
+      <section class="card">
+        <div class="section-heading">
+          <span class="section-icon"><Link2 size={16} /></span>
+          <h3>Links</h3>
+        </div>
+        <div class="link-list">
+          {#each place.links as link}
+            <a href={link.url} target="_blank" rel="noreferrer noopener">
+              <span>
+                {#if link.title}<strong>{link.title}</strong>{/if}
+                <small>{link.url}</small>
+              </span>
+              <ExternalLink size={15} />
+            </a>
+          {/each}
+        </div>
+      </section>
+    {/if}
 
     {#if place.description}<section class="card">
         <div class="section-heading"><h3>Notes</h3></div>
@@ -345,7 +386,8 @@
     flex-wrap: wrap;
     gap: 0.4rem;
   }
-  .badges span {
+  .badges span,
+  .badges button {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
@@ -356,6 +398,23 @@
     font-size: 0.7rem;
     font-weight: 750;
     text-transform: capitalize;
+  }
+  .badges button {
+    border: 0;
+    cursor: pointer;
+  }
+  .badges button:hover,
+  .badges button.active {
+    background: var(--surface-selected);
+    color: var(--green-800);
+  }
+  .badges button:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  .badges button:disabled {
+    opacity: 0.6;
+    cursor: wait;
   }
 
   .card {
@@ -447,7 +506,6 @@
     gap: 0.45rem;
   }
   .location-actions button,
-  .location-actions a,
   .add-photos {
     display: inline-flex;
     align-items: center;
@@ -474,6 +532,45 @@
     white-space: pre-wrap;
     line-height: 1.55;
     font-size: 0.9rem;
+  }
+  .link-list {
+    display: grid;
+    gap: 0.45rem;
+  }
+  .link-list a {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.7rem;
+    background: var(--surface-muted);
+    color: var(--green-800);
+    text-decoration: none;
+  }
+  .link-list a:hover {
+    background: var(--surface-selected);
+  }
+  .link-list a > span {
+    min-width: 0;
+    flex: 1;
+    display: grid;
+    gap: 0.15rem;
+  }
+  .link-list strong,
+  .link-list small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .link-list strong {
+    color: var(--text);
+    font-size: 0.82rem;
+  }
+  .link-list small {
+    color: var(--ink-muted);
+    font-size: 0.72rem;
   }
 
   .photo-heading {

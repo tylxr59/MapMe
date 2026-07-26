@@ -1,9 +1,33 @@
 import { z } from 'zod';
-import { checkboxSchema, dateSchema, httpUrlSchema, nullableText, uuidSchema } from './common';
+import { checkboxSchema, dateSchema, nullableText, uuidSchema } from './common';
 
 const finiteCoordinate = z.coerce.number().finite();
 
-export const placeStatusSchema = z.enum(['saved', 'want_to_go', 'visited']);
+export const placeLinkInputSchema = z.object({
+  title: nullableText(200),
+  url: z
+    .string()
+    .trim()
+    .min(1, 'Link URL is required')
+    .max(2048)
+    .refine((value) => {
+      try {
+        const url = new URL(value);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch {
+        return false;
+      }
+    }, 'Link must be a valid HTTP or HTTPS URL')
+});
+
+const placeLinksSchema = z.preprocess((value) => {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}, z.array(placeLinkInputSchema).max(50).default([]));
 
 export const placeInputSchema = z.object({
   id: uuidSchema.optional(),
@@ -13,7 +37,7 @@ export const placeInputSchema = z.object({
   address: nullableText(500),
   description: nullableText(20_000),
   categoryId: uuidSchema,
-  status: placeStatusSchema.default('saved'),
+  listId: uuidSchema,
   isFavorite: checkboxSchema,
   isArchived: checkboxSchema,
   rating: z
@@ -21,10 +45,14 @@ export const placeInputSchema = z.object({
     .optional()
     .transform((value) => (value === '' || value === undefined ? null : value)),
   dateVisited: dateSchema,
-  sourceUrl: httpUrlSchema,
+  links: placeLinksSchema,
   extraProperties: z.record(z.string(), z.unknown()).default({})
 });
 
 export const placeIdSchema = z.object({ id: uuidSchema });
+export const placeFavoriteSchema = z.object({
+  id: uuidSchema,
+  isFavorite: checkboxSchema
+});
 
 export type ValidatedPlaceInput = z.infer<typeof placeInputSchema>;

@@ -1,8 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { PlaceDetail, PlaceFilters, PlaceSummary, PlaceStatus } from '$lib/types';
+import type { PlaceDetail, PlaceFilters, PlaceSummary } from '$lib/types';
 import { getDatabase } from '../driver';
 import { attachmentsForPlace } from './attachments';
 import { mapCategory } from './categories';
+import { linksForPlace } from './links';
+import { mapList } from './lists';
 import { safeFtsQuery } from './search';
 
 interface PlaceRow {
@@ -18,12 +20,14 @@ interface PlaceRow {
   color: string;
   sort_order: number;
   is_system: number;
-  status: PlaceStatus;
+  list_id: string;
+  list_name: string;
+  list_sort_order: number;
+  list_is_system: number;
   is_favorite: number;
   is_archived: number;
   rating: number | null;
   date_visited: string | null;
-  source_url?: string | null;
   extra_properties_json?: string;
   created_at?: string;
   updated_at: string;
@@ -45,7 +49,12 @@ function mapSummary(row: PlaceRow): PlaceSummary {
       sort_order: row.sort_order,
       is_system: row.is_system
     }),
-    status: row.status,
+    list: mapList({
+      id: row.list_id,
+      name: row.list_name,
+      sort_order: row.list_sort_order,
+      is_system: row.list_is_system
+    }),
     isFavorite: row.is_favorite === 1,
     isArchived: row.is_archived === 1,
     rating: row.rating,
@@ -59,10 +68,13 @@ const summarySelect = `
   SELECT
     p.id, p.name, p.latitude, p.longitude, p.address,
     p.category_id, c.name AS category_name, c.icon_name, c.color, c.sort_order, c.is_system,
-    p.status, p.is_favorite, p.is_archived, p.rating, p.date_visited, p.updated_at,
+    p.list_id, l.name AS list_name, l.sort_order AS list_sort_order,
+    l.is_system AS list_is_system,
+    p.is_favorite, p.is_archived, p.rating, p.date_visited, p.updated_at,
     (SELECT count(*) FROM attachments a WHERE a.place_id = p.id) AS attachment_count
   FROM places p
   JOIN categories c ON c.id = p.category_id
+  JOIN lists l ON l.id = p.list_id
 `;
 
 export function listPlaces(
@@ -79,18 +91,14 @@ export function listPlaces(
       values.push(query);
     }
   }
-  if (filters.statuses.length > 0) {
-    where.push(`p.status IN (${filters.statuses.map(() => '?').join(',')})`);
-    values.push(...filters.statuses);
+  if (filters.listIds.length > 0) {
+    where.push(`p.list_id IN (${filters.listIds.map(() => '?').join(',')})`);
+    values.push(...filters.listIds);
   }
   if (filters.categoryIds.length > 0) {
     where.push(`p.category_id IN (${filters.categoryIds.map(() => '?').join(',')})`);
     values.push(...filters.categoryIds);
   }
-  if (filters.visited === 'visited')
-    where.push("(p.status = 'visited' OR p.date_visited IS NOT NULL)");
-  if (filters.visited === 'unvisited')
-    where.push("(p.status != 'visited' AND p.date_visited IS NULL)");
   if (filters.favorite !== null) {
     where.push('p.is_favorite = ?');
     values.push(filters.favorite ? 1 : 0);
@@ -105,8 +113,7 @@ export function listPlaces(
   const sortSql = {
     updated_desc: 'p.updated_at DESC',
     name_asc: 'p.name COLLATE NOCASE ASC',
-    rating_desc: 'p.rating DESC NULLS LAST, p.name COLLATE NOCASE ASC',
-    visited_desc: 'p.date_visited DESC NULLS LAST, p.updated_at DESC'
+    rating_desc: 'p.rating DESC NULLS LAST, p.name COLLATE NOCASE ASC'
   }[filters.sort];
 
   const sql = `${summarySelect}
@@ -122,9 +129,11 @@ export function getPlace(id: string, database: DatabaseSync = getDatabase()): Pl
     .prepare(
       `SELECT
         p.*, c.name AS category_name, c.icon_name, c.color, c.sort_order, c.is_system,
+        l.name AS list_name, l.sort_order AS list_sort_order, l.is_system AS list_is_system,
         (SELECT count(*) FROM attachments a WHERE a.place_id = p.id) AS attachment_count
        FROM places p
        JOIN categories c ON c.id = p.category_id
+       JOIN lists l ON l.id = p.list_id
        WHERE p.id = ?`
     )
     .get(id) as PlaceRow | undefined;
@@ -139,7 +148,7 @@ export function getPlace(id: string, database: DatabaseSync = getDatabase()): Pl
   return {
     ...summary,
     description: row.description ?? null,
-    sourceUrl: row.source_url ?? null,
+    links: linksForPlace(id, database),
     extraProperties,
     createdAt: row.created_at ?? row.updated_at,
     attachments: attachmentsForPlace(id, database)

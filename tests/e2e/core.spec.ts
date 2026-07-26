@@ -96,6 +96,31 @@ test('uses one collapsible sidebar for places and settings', async ({ page }) =>
   await expect(sidebar).toBeHidden();
 });
 
+test('creates and manages a custom place list', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/manage/lists');
+  await expect(page.getByRole('heading', { name: 'Lists', exact: true })).toBeVisible();
+  const settingsNavigation = page.getByRole('navigation');
+  const backButton = page.getByRole('link', { name: 'Back to map' });
+  const backPosition = await backButton.boundingBox();
+  await settingsNavigation.hover();
+  await page.mouse.wheel(0, 100);
+  await expect
+    .poll(() => settingsNavigation.evaluate((element) => element.scrollLeft))
+    .toBeGreaterThan(0);
+  await expect.poll(async () => (await backButton.boundingBox())?.x).toBe(backPosition?.x);
+  await expect(
+    page.locator('.list-card > summary').filter({ hasText: 'Saved for later' })
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Add list' }).click();
+  await page.getByPlaceholder('e.g. Honeymoon options').fill('Honeymoon options');
+  await page.locator('#new-list').getByRole('button', { name: 'Add list' }).click();
+  await expect(
+    page.locator('.list-card > summary').filter({ hasText: 'Honeymoon options' })
+  ).toBeVisible();
+});
+
 test('adds a place with direct coordinates and copies them from its details', async ({
   page,
   context
@@ -113,6 +138,18 @@ test('adds a place with direct coordinates and copies them from its details', as
   await page.getByLabel('Longitude').fill('-71.0589');
   await page.getByRole('button', { name: 'Save place' }).click();
   await expect(page.getByRole('heading', { name: placeName, exact: true })).toBeVisible();
+
+  const favorite = page.getByRole('button', { name: 'Add to favorites' });
+  await expect(favorite).toHaveAttribute('aria-pressed', 'false');
+  await favorite.click();
+  const unfavorite = page.getByRole('button', { name: 'Remove from favorites' });
+  await expect(unfavorite).toHaveAttribute('aria-pressed', 'true');
+  await unfavorite.click();
+  await expect(page.getByRole('button', { name: 'Add to favorites' })).toHaveAttribute(
+    'aria-pressed',
+    'false'
+  );
+
   await page.getByRole('button', { name: 'Copy coords' }).click();
   await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
   await expect
@@ -121,13 +158,25 @@ test('adds a place with direct coordinates and copies them from its details', as
 
   const firstEdit = `${placeName} edited`;
   await page.getByRole('button', { name: 'Edit place' }).click();
+  await expect(page.locator('input[name="isFavorite"][type="checkbox"]')).toHaveCount(0);
+  await expect(page.getByLabel('Archived')).toBeVisible();
+  await page.getByRole('button', { name: 'Add link' }).click();
+  await page.getByLabel('Link 1 title').fill('Official page');
+  await page.getByLabel('Link 1 URL').fill('https://example.com/lookout');
   await page.getByLabel('Name').fill(firstEdit);
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('heading', { name: firstEdit })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Links' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Official page/ })).toHaveAttribute(
+    'href',
+    'https://example.com/lookout'
+  );
 
   const secondEdit = `${placeName} edited twice`;
   await page.getByRole('button', { name: 'Edit place' }).click();
   await expect(page.getByLabel('Name')).toHaveValue(firstEdit);
+  await expect(page.getByLabel('Link 1 title')).toHaveValue('Official page');
+  await expect(page.getByLabel('Link 1 URL')).toHaveValue('https://example.com/lookout');
   await page.getByLabel('Name').fill(secondEdit);
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('heading', { name: secondEdit })).toBeVisible();

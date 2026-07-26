@@ -1,14 +1,27 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { ArrowLeft, Database, Settings2, Shapes } from '@lucide/svelte';
+  import { ArrowLeft, Database, ListChecks, Settings2, Shapes } from '@lucide/svelte';
   let { children } = $props();
+
+  function scrollNavigation(event: WheelEvent) {
+    const navigation = event.currentTarget as HTMLElement;
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+
+    const maximum = navigation.scrollWidth - navigation.clientWidth;
+    const next = Math.max(0, Math.min(maximum, navigation.scrollLeft + event.deltaY));
+    if (next === navigation.scrollLeft) return;
+
+    event.preventDefault();
+    navigation.scrollLeft = next;
+  }
 </script>
 
 <div class="manage-shell">
   <header>
-    <a href="/" class="back"><ArrowLeft size={18} /> Back to map</a>
+    <a href="/" class="back" aria-label="Back to map" title="Back to map"><ArrowLeft size={21} /></a
+    >
     <strong>Manage MapMe</strong>
-    <nav>
+    <nav onwheel={scrollNavigation}>
       <a
         href="/manage/general"
         aria-current={page.url.pathname.startsWith('/manage/general') ? 'page' : undefined}
@@ -18,6 +31,11 @@
         href="/manage/categories"
         aria-current={page.url.pathname.startsWith('/manage/categories') ? 'page' : undefined}
         ><Shapes size={16} /> Categories</a
+      >
+      <a
+        href="/manage/lists"
+        aria-current={page.url.pathname.startsWith('/manage/lists') ? 'page' : undefined}
+        ><ListChecks size={16} /> Lists</a
       >
       <a
         href="/manage/data"
@@ -38,29 +56,46 @@
     min-height: 3.8rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.65rem;
     padding: 0.6rem max(1rem, calc((100vw - 1050px) / 2));
     border-bottom: 1px solid var(--line);
     background: var(--cream);
+    overflow: hidden;
   }
   .back {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    color: var(--green-800);
+    width: 2.6rem;
+    height: 2.6rem;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 0.7rem;
+    color: var(--text-secondary);
     text-decoration: none;
-    font-size: 0.8rem;
-    font-weight: 750;
+  }
+  .back:hover {
+    background: var(--surface-muted);
+    color: var(--green-800);
   }
   header strong {
-    margin-right: auto;
+    flex: 0 0 auto;
+    margin-right: 0.35rem;
   }
   nav {
+    min-width: 0;
     display: flex;
+    flex: 1;
+    justify-content: flex-end;
     gap: 0.25rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar {
+    display: none;
   }
   nav a {
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
     gap: 0.3rem;
     border-radius: 0.5rem;
@@ -87,12 +122,8 @@
     header strong {
       display: none;
     }
-    header {
-      flex-wrap: wrap;
-    }
     nav {
-      width: 100%;
-      order: 3;
+      justify-content: flex-start;
     }
     main {
       padding-top: 1.2rem;

@@ -3,9 +3,8 @@ import type { PlaceFilters } from '$lib/types';
 
 const filters = (archived: boolean): PlaceFilters => ({
   query: '',
-  statuses: [],
+  listIds: [],
   categoryIds: [],
-  visited: 'any',
   favorite: null,
   archived,
   ratingMin: null,
@@ -34,12 +33,13 @@ export function exportGeoJson(): string {
       description: place.description,
       category: place.category.name,
       categoryId: place.category.id,
-      status: place.status,
+      list: place.list.name,
+      listId: place.list.id,
+      links: place.links.map((link) => ({ title: link.title, url: link.url })),
       favorite: place.isFavorite,
       archived: place.isArchived,
       rating: place.rating,
       dateVisited: place.dateVisited,
-      sourceUrl: place.sourceUrl,
       createdAt: place.createdAt,
       updatedAt: place.updatedAt,
       attachments: place.attachments.map((attachment) => ({

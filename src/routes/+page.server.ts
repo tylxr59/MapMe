@@ -2,17 +2,22 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { formDataObject } from '$lib/schemas/common';
 import { filtersSchema } from '$lib/schemas/filters';
-import { placeIdSchema, placeInputSchema } from '$lib/schemas/place';
+import { placeFavoriteSchema, placeIdSchema, placeInputSchema } from '$lib/schemas/place';
 import { listCategories } from '$lib/server/db/queries/categories';
+import { listPlaceLists } from '$lib/server/db/queries/lists';
 import { listPlaces } from '$lib/server/db/queries/places';
-import { createPlace, deletePlace, updatePlace } from '$lib/server/services/places';
+import {
+  createPlace,
+  deletePlace,
+  setPlaceFavorite,
+  updatePlace
+} from '$lib/server/services/places';
 
 export const load: PageServerLoad = ({ url }) => {
   const parsedFilters = filtersSchema.parse({
     query: url.searchParams.get('q') ?? '',
-    statuses: url.searchParams.get('statuses') ?? '',
+    listIds: url.searchParams.get('lists') ?? '',
     categoryIds: url.searchParams.get('categories') ?? '',
-    visited: url.searchParams.get('visited') ?? 'any',
     favorite: url.searchParams.get('favorite') ?? undefined,
     archived: url.searchParams.get('archived') ?? undefined,
     ratingMin: url.searchParams.get('ratingMin') ?? null,
@@ -20,6 +25,7 @@ export const load: PageServerLoad = ({ url }) => {
   });
   return {
     categories: listCategories(),
+    lists: listPlaceLists(),
     places: listPlaces(parsedFilters),
     filters: parsedFilters
   };
@@ -54,6 +60,15 @@ export const actions = {
       const input = placeInputSchema.parse(formDataObject(form));
       updatePlace(id, input);
       return { success: true, operation: 'updated', placeId: id };
+    } catch (error) {
+      return validationFailure(error);
+    }
+  },
+  favoritePlace: async ({ request }) => {
+    try {
+      const input = placeFavoriteSchema.parse(formDataObject(await request.formData()));
+      setPlaceFavorite(input.id, input.isFavorite);
+      return { success: true, operation: 'favorite-updated', placeId: input.id };
     } catch (error) {
       return validationFailure(error);
     }

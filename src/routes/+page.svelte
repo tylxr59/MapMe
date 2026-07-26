@@ -31,7 +31,6 @@
       name: place.name,
       latitude: place.latitude,
       longitude: place.longitude,
-      status: place.status,
       isFavorite: place.isFavorite,
       isArchived: place.isArchived,
       category: place.category
@@ -122,6 +121,13 @@
     selectedPlace = null;
     await invalidateAll();
   }
+
+  async function changed() {
+    if (!selectedPlace) return;
+    const placeId = selectedPlace.id;
+    await invalidateAll();
+    await selectPlace(placeId);
+  }
 </script>
 
 <svelte:head>
@@ -149,7 +155,7 @@
         </a>
       </header>
       <div class="sidebar-content" id="places-sidebar-content">
-        <FilterBar filters={data.filters} categories={data.categories} />
+        <FilterBar filters={data.filters} categories={data.categories} lists={data.lists} />
         <PlaceList places={data.places} {selectedId} onselect={selectPlace} />
       </div>
       <footer class="sidebar-footer">
@@ -241,6 +247,7 @@
           place={editing ? selectedPlace : null}
           coordinates={draft}
           categories={data.categories}
+          lists={data.lists}
           config={data.config}
           oncoordinates={(value) => (draft = value)}
           onclose={() => ((editorOpen = false), (draft = null))}
@@ -258,7 +265,7 @@
           }}
           onclose={() => ((selectedPlace = null), (selectedId = null))}
           ondeleted={deleted}
-          onchanged={() => selectPlace(selectedPlace!.id)}
+          onchanged={changed}
         />
       </aside>
     {:else if loadingDetail}

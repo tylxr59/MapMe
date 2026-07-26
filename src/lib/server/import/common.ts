@@ -8,9 +8,11 @@ import type {
   ImportPreview,
   ImportRecordResult,
   PlaceInput,
-  PlaceStatus
+  PlaceLinkInput,
+  PlaceListDTO
 } from '$lib/types';
 import { listCategories } from '$lib/server/db/queries/categories';
+import { listPlaceLists } from '$lib/server/db/queries/lists';
 import { findDuplicatePlace } from '$lib/server/db/queries/places';
 import { getDatabase } from '$lib/server/db/driver';
 import { storagePaths } from '$lib/server/storage/paths';
@@ -28,12 +30,14 @@ export interface RawImportCandidate {
   address?: unknown;
   description?: unknown;
   category?: unknown;
+  list?: unknown;
   status?: unknown;
   favorite?: unknown;
   archived?: unknown;
   rating?: unknown;
   dateVisited?: unknown;
   sourceUrl?: unknown;
+  links?: unknown;
   extraProperties?: Record<string, unknown>;
   warnings?: string[];
 }
@@ -57,14 +61,18 @@ function booleanValue(value: unknown): boolean {
   return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
 }
 
-function statusValue(value: unknown): PlaceStatus {
+function legacyStatusListName(value: unknown): string {
   const normalized = String(value ?? 'saved')
     .trim()
     .toLowerCase()
     .replaceAll(/[\s-]+/g, '_');
-  return ['saved', 'want_to_go', 'visited'].includes(normalized)
-    ? (normalized as PlaceStatus)
-    : 'saved';
+  return (
+    {
+      visited: 'Visited',
+      want_to_go: 'Want to go',
+      saved: 'Saved for later'
+    }[normalized] ?? 'Saved for later'
+  );
 }
 
 function categoryId(value: unknown, categories: CategoryDTO[]): string {
@@ -76,6 +84,43 @@ function categoryId(value: unknown, categories: CategoryDTO[]): string {
   );
 }
 
+function listId(value: unknown, legacyStatus: unknown, lists: PlaceListDTO[]): string {
+  const requested = normalizeName(String(value ?? ''));
+  const legacyName = normalizeName(legacyStatusListName(legacyStatus));
+  return (
+    lists.find((list) => list.id === value || normalizeName(list.name) === requested)?.id ??
+    lists.find((list) => normalizeName(list.name) === legacyName)?.id ??
+    lists.find((list) => list.isSystem)?.id ??
+    lists[0]?.id
+  );
+}
+
+function linkValues(value: unknown, sourceUrl: unknown): PlaceLinkInput[] {
+  let parsed = value;
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      parsed = [];
+    }
+  }
+  const links = Array.isArray(parsed)
+    ? parsed.map((link) =>
+        typeof link === 'string'
+          ? { title: null, url: link }
+          : {
+              title:
+                link && typeof link === 'object' && 'title' in link
+                  ? String(link.title ?? '')
+                  : null,
+              url: link && typeof link === 'object' && 'url' in link ? String(link.url ?? '') : ''
+            }
+      )
+    : [];
+  if (sourceUrl) links.push({ title: null, url: String(sourceUrl) });
+  return links;
+}
+
 export function parseImportSource(format: ParsedImport['format'], content: string): ParsedImport {
   if (format === 'geojson') return { format, records: parseGeoJsonImport(content) };
   if (format === 'csv') return { format, records: parseCsvImport(content) };
@@ -85,6 +130,7 @@ export function parseImportSource(format: ParsedImport['format'], content: strin
 
 export function buildImportPreview(parsed: ParsedImport, token: string): ImportPreview {
   const categories = listCategories();
+  const lists = listPlaceLists();
   const records: ImportRecordResult[] = parsed.records.slice(0, 10_000).map((raw, index) => {
     const candidate = {
       id: raw.id,
@@ -94,12 +140,12 @@ export function buildImportPreview(parsed: ParsedImport, token: string): ImportP
       address: raw.address ?? null,
       description: raw.description ?? null,
       categoryId: categoryId(raw.category, categories),
-      status: statusValue(raw.status),
+      listId: listId(raw.list, raw.status, lists),
       isFavorite: booleanValue(raw.favorite),
       isArchived: booleanValue(raw.archived),
       rating: raw.rating === '' || raw.rating === undefined ? null : raw.rating,
       dateVisited: raw.dateVisited ?? null,
-      sourceUrl: raw.sourceUrl ?? null,
+      links: linkValues(raw.links, raw.sourceUrl),
       extraProperties: raw.extraProperties ?? {}
     };
     const validation = placeInputSchema.safeParse(candidate);

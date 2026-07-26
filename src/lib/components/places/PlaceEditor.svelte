@@ -1,12 +1,13 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { Check, LoaderCircle, LocateFixed, Search, X } from '@lucide/svelte';
-  import type { CategoryDTO, PlaceDetail, SafeClientConfig } from '$lib/types';
+  import { Check, Link2, LoaderCircle, LocateFixed, Plus, Search, Trash2, X } from '@lucide/svelte';
+  import type { CategoryDTO, PlaceDetail, PlaceListDTO, SafeClientConfig } from '$lib/types';
 
   let {
     place = null,
     coordinates,
     categories,
+    lists,
     config,
     oncoordinates,
     onclose,
@@ -15,6 +16,7 @@
     place?: PlaceDetail | null;
     coordinates: { latitude: number; longitude: number };
     categories: CategoryDTO[];
+    lists: PlaceListDTO[];
     config: SafeClientConfig;
     oncoordinates: (coordinates: { latitude: number; longitude: number }) => void;
     onclose: () => void;
@@ -32,12 +34,17 @@
   let geocodeError = $state('');
   let geocoding = $state(false);
   let geocodeController: AbortController | null = null;
+  let links = $state<Array<{ title: string; url: string }>>([]);
+  const linksJson = $derived(
+    JSON.stringify(links.filter((link) => link.title.trim() || link.url.trim()))
+  );
 
   $effect(() => {
     if (!initialized) {
       latitude = place?.latitude ?? coordinates.latitude;
       longitude = place?.longitude ?? coordinates.longitude;
       address = place?.address ?? '';
+      links = place?.links.map((link) => ({ title: link.title ?? '', url: link.url })) ?? [];
       initialized = true;
     }
     if (!place) {
@@ -98,6 +105,14 @@
     oncoordinates({ latitude, longitude });
     geocodeResults = [];
   }
+
+  function addLink() {
+    links.push({ title: '', url: '' });
+  }
+
+  function removeLink(index: number) {
+    links.splice(index, 1);
+  }
 </script>
 
 <section class="editor" aria-label={place ? 'Edit place' : 'Add a place'}>
@@ -129,6 +144,8 @@
     }}
   >
     {#if place}<input type="hidden" name="id" value={place.id} />{/if}
+    <input type="hidden" name="isFavorite" value={place?.isFavorite ? 'true' : 'false'} />
+    <input type="hidden" name="links" value={linksJson} />
     <div class="fields">
       <label class="wide"
         >Name <input
@@ -237,11 +254,13 @@
         </select>
       </label>
       <label
-        >Status
-        <select name="status" value={place?.status ?? 'saved'}>
-          <option value="saved">Saved</option>
-          <option value="want_to_go">Want to go</option>
-          <option value="visited">Visited</option>
+        >List
+        <select
+          name="listId"
+          required
+          value={place?.list.id ?? lists.find((list) => list.isSystem)?.id ?? lists.at(-1)?.id}
+        >
+          {#each lists as list}<option value={list.id}>{list.name}</option>{/each}
         </select>
       </label>
       <label
@@ -259,15 +278,45 @@
         >Date visited
         <input name="dateVisited" type="date" value={place?.dateVisited ?? ''} /></label
       >
-      <label class="wide"
-        >Source URL <input
-          name="sourceUrl"
-          type="url"
-          maxlength="2048"
-          value={place?.sourceUrl ?? ''}
-          placeholder="https://…"
-        /></label
-      >
+      <div class="links-editor wide">
+        <div class="links-heading">
+          <span><Link2 size={15} /> Links</span>
+          <button type="button" onclick={addLink}><Plus size={15} /> Add link</button>
+        </div>
+        {#each links as link, index}
+          <div class="link-row">
+            <label>
+              Title
+              <input
+                maxlength="200"
+                bind:value={link.title}
+                placeholder="Optional label"
+                aria-label={`Link ${index + 1} title`}
+              />
+            </label>
+            <label>
+              URL
+              <input
+                type="url"
+                maxlength="2048"
+                bind:value={link.url}
+                placeholder="https://…"
+                aria-label={`Link ${index + 1} URL`}
+              />
+            </label>
+            <button
+              type="button"
+              class="remove-link"
+              onclick={() => removeLink(index)}
+              aria-label={`Remove link ${index + 1}`}><Trash2 size={16} /></button
+            >
+          </div>
+        {:else}
+          <p class="links-empty">
+            Add useful pages, booking details, or references for this place.
+          </p>
+        {/each}
+      </div>
       <label class="wide"
         >Notes
         <textarea
@@ -278,9 +327,6 @@
         >
       </label>
       <div class="states wide">
-        <label class="check"
-          ><input type="checkbox" name="isFavorite" checked={place?.isFavorite} /> Favorite</label
-        >
         <label class="check"
           ><input type="checkbox" name="isArchived" checked={place?.isArchived} /> Archived</label
         >
@@ -343,6 +389,7 @@
     overflow: auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
+    align-content: start;
     gap: 0.85rem;
     padding: 1rem 1.1rem 1.25rem;
   }
@@ -404,6 +451,58 @@
   }
   .coordinate-lookup:disabled {
     opacity: 0.55;
+  }
+  .links-editor {
+    display: grid;
+    gap: 0.65rem;
+  }
+  .links-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .links-heading > span,
+  .links-heading button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 750;
+  }
+  .links-heading > span {
+    color: var(--text-secondary);
+  }
+  .links-heading button {
+    border: 0;
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    background: var(--surface-selected);
+    color: var(--green-800);
+  }
+  .link-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr) auto;
+    align-items: end;
+    gap: 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    padding: 0.7rem;
+    background: var(--surface-muted);
+  }
+  .remove-link {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 0.55rem;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+  }
+  .links-empty {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.76rem;
   }
   .check {
     display: flex;
@@ -498,6 +597,14 @@
   @keyframes spin {
     to {
       transform: rotate(360deg);
+    }
+  }
+  @media (max-width: 580px) {
+    .link-row {
+      grid-template-columns: 1fr auto;
+    }
+    .link-row label:first-child {
+      grid-column: 1 / -1;
     }
   }
 </style>

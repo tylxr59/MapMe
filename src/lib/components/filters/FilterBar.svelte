@@ -1,7 +1,11 @@
 <script lang="ts">
   import { Search, SlidersHorizontal, X } from '@lucide/svelte';
-  import type { CategoryDTO, PlaceFilters } from '$lib/types';
-  let { filters, categories }: { filters: PlaceFilters; categories: CategoryDTO[] } = $props();
+  import type { CategoryDTO, PlaceFilters, PlaceListDTO } from '$lib/types';
+  let {
+    filters,
+    categories,
+    lists
+  }: { filters: PlaceFilters; categories: CategoryDTO[]; lists: PlaceListDTO[] } = $props();
   let expanded = $state(false);
 </script>
 
@@ -26,14 +30,13 @@
   {#if expanded}
     <div class="filter-grid">
       <label
-        >Status
-        <select name="statuses">
-          <option value="">Any status</option>
-          <option value="saved" selected={filters.statuses.includes('saved')}>Saved</option>
-          <option value="want_to_go" selected={filters.statuses.includes('want_to_go')}
-            >Want to go</option
-          >
-          <option value="visited" selected={filters.statuses.includes('visited')}>Visited</option>
+        >List
+        <select name="lists">
+          <option value="">Any list</option>
+          {#each lists as list}
+            <option value={list.id} selected={filters.listIds.includes(list.id)}>{list.name}</option
+            >
+          {/each}
         </select>
       </label>
       <label
@@ -45,14 +48,6 @@
               >{category.name}</option
             >
           {/each}
-        </select>
-      </label>
-      <label
-        >Visited
-        <select name="visited" value={filters.visited}>
-          <option value="any">Any</option>
-          <option value="visited">Visited</option>
-          <option value="unvisited">Unvisited</option>
         </select>
       </label>
       <label

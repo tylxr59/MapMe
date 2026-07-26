@@ -10,12 +10,17 @@ export function exportCsv(): string {
     address: place.address ?? '',
     description: place.description ?? '',
     category: place.category.name,
-    status: place.status,
+    list: place.list.name,
+    links: JSON.stringify(
+      place.links.map((link) => ({
+        title: link.title,
+        url: link.url
+      }))
+    ),
     favorite: place.isFavorite,
     archived: place.isArchived,
     rating: place.rating ?? '',
     date_visited: place.dateVisited ?? '',
-    source_url: place.sourceUrl ?? '',
     created_at: place.createdAt,
     updated_at: place.updatedAt
   }));
@@ -29,12 +34,12 @@ export function exportCsv(): string {
       'address',
       'description',
       'category',
-      'status',
+      'list',
+      'links',
       'favorite',
       'archived',
       'rating',
       'date_visited',
-      'source_url',
       'created_at',
       'updated_at'
     ]

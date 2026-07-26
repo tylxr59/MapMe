@@ -17,7 +17,7 @@
     <strong>{place.name}</strong>
     <span>{place.address || place.category.name}</span>
     <span class="meta">
-      <span class="status">{place.status.replaceAll('_', ' ')}</span>
+      <span class="list-name">{place.list.name}</span>
       {#if place.rating}<span><Star size={12} fill="currentColor" /> {place.rating}</span>{/if}
       {#if place.isFavorite}<Heart size={13} fill="currentColor" aria-label="Favorite" />{/if}
       {#if place.isArchived}<Archive size={13} aria-label="Archived" />{/if}
@@ -82,8 +82,7 @@
     align-items: center;
     gap: 0.18rem;
   }
-  .status {
-    text-transform: capitalize;
+  .list-name {
     color: var(--green-800) !important;
     font-weight: 700;
   }

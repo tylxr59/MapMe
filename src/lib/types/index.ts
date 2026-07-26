@@ -1,6 +1,3 @@
-export type PlaceStatus = 'saved' | 'want_to_go' | 'visited';
-export type VisitedFilter = 'any' | 'visited' | 'unvisited';
-
 export interface CategoryDTO {
   id: string;
   name: string;
@@ -10,6 +7,27 @@ export interface CategoryDTO {
   sortOrder: number;
   isSystem: boolean;
   placeCount?: number;
+}
+
+export interface PlaceListDTO {
+  id: string;
+  name: string;
+  sortOrder: number;
+  isSystem: boolean;
+  placeCount?: number;
+}
+
+export interface PlaceLinkDTO {
+  id: string;
+  title: string | null;
+  url: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface PlaceLinkInput {
+  title?: string | null;
+  url: string;
 }
 
 export interface AttachmentDTO {
@@ -33,12 +51,12 @@ export interface PlaceInput {
   address?: string | null;
   description?: string | null;
   categoryId: string;
-  status: PlaceStatus;
+  listId: string;
   isFavorite: boolean;
   isArchived: boolean;
   rating?: number | null;
   dateVisited?: string | null;
-  sourceUrl?: string | null;
+  links?: PlaceLinkInput[];
   extraProperties?: Record<string, unknown>;
 }
 
@@ -49,7 +67,7 @@ export interface PlaceSummary {
   longitude: number;
   address: string | null;
   category: CategoryDTO;
-  status: PlaceStatus;
+  list: PlaceListDTO;
   isFavorite: boolean;
   isArchived: boolean;
   rating: number | null;
@@ -60,7 +78,7 @@ export interface PlaceSummary {
 
 export interface PlaceDetail extends PlaceSummary {
   description: string | null;
-  sourceUrl: string | null;
+  links: PlaceLinkDTO[];
   extraProperties: Record<string, unknown>;
   createdAt: string;
   attachments: AttachmentDTO[];
@@ -71,7 +89,6 @@ export interface MapPlace {
   name: string;
   latitude: number;
   longitude: number;
-  status: PlaceStatus;
   isFavorite: boolean;
   isArchived: boolean;
   category: Pick<CategoryDTO, 'id' | 'name' | 'color' | 'iconName' | 'iconSvg'>;
@@ -79,13 +96,12 @@ export interface MapPlace {
 
 export interface PlaceFilters {
   query: string;
-  statuses: PlaceStatus[];
+  listIds: string[];
   categoryIds: string[];
-  visited: VisitedFilter;
   favorite: boolean | null;
   archived: boolean;
   ratingMin: number | null;
-  sort: 'updated_desc' | 'name_asc' | 'rating_desc' | 'visited_desc';
+  sort: 'updated_desc' | 'name_asc' | 'rating_desc';
 }
 
 export interface SafeClientConfig {

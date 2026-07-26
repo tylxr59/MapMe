@@ -14,14 +14,14 @@ const validPlace = {
   latitude: 40.7,
   longitude: -74,
   categoryId: '00000000-0000-4000-8000-000000000008',
-  status: 'saved',
+  listId: '00000000-0000-4000-8000-000000000101',
   isFavorite: false,
   isArchived: false,
   rating: null,
   address: null,
   description: null,
   dateVisited: null,
-  sourceUrl: null,
+  links: [],
   extraProperties: {}
 };
 
@@ -32,8 +32,11 @@ describe('place validation', () => {
 
   it('rejects invalid coordinates and unsafe URL schemes', () => {
     expect(
-      placeInputSchema.safeParse({ ...validPlace, latitude: 91, sourceUrl: 'javascript:alert(1)' })
-        .success
+      placeInputSchema.safeParse({
+        ...validPlace,
+        latitude: 91,
+        links: [{ title: '', url: 'javascript:alert(1)' }]
+      }).success
     ).toBe(false);
   });
 
@@ -47,11 +50,14 @@ describe('place validation', () => {
 describe('filter validation', () => {
   it('parses typed comma-separated filters', () => {
     const parsed = filtersSchema.parse({
-      statuses: 'saved,visited',
+      listIds: '00000000-0000-4000-8000-000000000101,00000000-0000-4000-8000-000000000103',
       categoryIds: '00000000-0000-4000-8000-000000000008',
       archived: 'true'
     });
-    expect(parsed.statuses).toEqual(['saved', 'visited']);
+    expect(parsed.listIds).toEqual([
+      '00000000-0000-4000-8000-000000000101',
+      '00000000-0000-4000-8000-000000000103'
+    ]);
     expect(parsed.archived).toBe(true);
   });
 });

@@ -5,9 +5,8 @@ import { listPlaces } from '$lib/server/db/queries/places';
 export const GET: RequestHandler = ({ url }) => {
   const filters = filtersSchema.parse({
     query: url.searchParams.get('q') ?? '',
-    statuses: url.searchParams.get('statuses') ?? '',
+    listIds: url.searchParams.get('lists') ?? '',
     categoryIds: url.searchParams.get('categories') ?? '',
-    visited: url.searchParams.get('visited') ?? 'any',
     favorite: url.searchParams.get('favorite') ?? undefined,
     archived: url.searchParams.get('archived') ?? undefined,
     ratingMin: url.searchParams.get('ratingMin') ?? null,
