@@ -37,7 +37,6 @@ ENV NODE_ENV=production \
     TILE_CACHE_PATH=/data/tile-cache \
     TILE_PROXY_ENABLED=true \
     TILE_CACHE_MAX_MB=512 \
-    AUTH_MODE=none \
     BODY_SIZE_LIMIT=2100M \
     SHUTDOWN_TIMEOUT=30 \
     PUID=10001 \

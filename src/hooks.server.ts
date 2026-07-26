@@ -1,6 +1,7 @@
 import { redirect, type Handle, type ServerInit } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 import { privateConfig } from '$lib/server/config/private';
+import { getAppConfig, requestOrigin } from '$lib/server/config/app';
 import { getDatabase } from '$lib/server/db/driver';
 import { initializeStorage, cleanupStaging } from '$lib/server/storage/paths';
 import { SESSION_COOKIE, validateSession } from '$lib/server/auth/sessions';
@@ -28,13 +29,44 @@ export const handle: Handle = async ({ event, resolve }) => {
   event.locals.authenticated = false;
   event.locals.identity = null;
   event.locals.sessionToken = null;
+  const appConfig = getAppConfig();
+  const requestMethod = event.request.method.toUpperCase();
+  const contentType = event.request.headers.get('content-type')?.split(';', 1)[0]?.trim() ?? '';
+  if (
+    ['POST', 'PUT', 'PATCH', 'DELETE'].includes(requestMethod) &&
+    ['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain'].includes(
+      contentType
+    ) &&
+    event.request.headers.get('origin') !== (appConfig?.origin ?? requestOrigin(event.request))
+  ) {
+    return new Response(`Cross-site ${requestMethod} form submissions are forbidden`, {
+      status: 403
+    });
+  }
 
-  if (privateConfig.authMode === 'none') {
+  if (!appConfig) {
+    if (
+      event.url.pathname !== '/setup' &&
+      event.url.pathname !== '/healthz' &&
+      !event.url.pathname.startsWith('/_app/') &&
+      event.url.pathname !== '/favicon.svg' &&
+      event.url.pathname !== '/manifest.webmanifest' &&
+      event.url.pathname !== '/service-worker.js' &&
+      !event.url.pathname.startsWith('/icons/')
+    ) {
+      if (event.url.pathname.startsWith('/api/')) {
+        return Response.json({ error: 'First-run setup is required' }, { status: 503 });
+      }
+      throw redirect(303, '/setup');
+    }
+  } else if (event.url.pathname === '/setup') {
+    throw redirect(303, '/');
+  } else if (appConfig.authMode === 'none') {
     event.locals.authenticated = true;
     event.locals.identity = 'administrator';
-  } else if (privateConfig.authMode === 'password') {
+  } else if (appConfig.authMode === 'password') {
     const token = event.cookies.get(SESSION_COOKIE) ?? '';
-    if (token && validateSession(token)) {
+    if (token && validateSession(token, appConfig.passwordHash)) {
       event.locals.authenticated = true;
       event.locals.identity = 'administrator';
       event.locals.sessionToken = token;
@@ -46,14 +78,19 @@ export const handle: Handle = async ({ event, resolve }) => {
     } catch {
       address = dev ? '127.0.0.1' : '';
     }
-    const identity = proxyIdentity(event.request.headers, address);
+    const identity = proxyIdentity(
+      event.request.headers,
+      address,
+      appConfig.proxyHeader,
+      appConfig.proxyTrustedCidrs
+    );
     if (identity) {
       event.locals.authenticated = true;
       event.locals.identity = identity;
     }
   }
 
-  if (!event.locals.authenticated && !isPublicPath(event.url.pathname)) {
+  if (appConfig && !event.locals.authenticated && !isPublicPath(event.url.pathname)) {
     if (event.url.pathname.startsWith('/api/')) {
       return Response.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -63,7 +100,8 @@ export const handle: Handle = async ({ event, resolve }) => {
     );
   }
 
-  if (event.locals.authenticated && event.url.pathname === '/login') throw redirect(303, '/');
+  if (appConfig && event.locals.authenticated && event.url.pathname === '/login')
+    throw redirect(303, '/');
 
   const response = await resolve(event);
   const tileOrigin = (() => {

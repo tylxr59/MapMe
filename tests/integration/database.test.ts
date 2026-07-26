@@ -47,6 +47,21 @@ describe('database and place CRUD', () => {
     ).toBe('pin');
   });
 
+  it('imports v1.0 environment settings into persistent application configuration', async () => {
+    const { getAppConfig } = await import('$lib/server/config/app');
+    const config = getAppConfig();
+    expect(config).toMatchObject({
+      version: 1,
+      origin: 'http://localhost:3000',
+      authMode: 'none'
+    });
+    const { getDatabase } = await import('$lib/server/db/driver');
+    const row = getDatabase()
+      .prepare("SELECT value_json FROM settings WHERE key = 'app_configuration'")
+      .get() as { value_json: string };
+    expect(JSON.parse(row.value_json).origin).toBe('http://localhost:3000');
+  });
+
   it('creates, searches, updates, and deletes a place', async () => {
     const { createPlace, updatePlace, deletePlace } = await import('$lib/server/services/places');
     const { getPlace, listPlaces } = await import('$lib/server/db/queries/places');
@@ -103,15 +118,16 @@ describe('database and place CRUD', () => {
     const { getDatabase } = await import('$lib/server/db/driver');
     const { createSession, deleteSession, sha256, validateSession } =
       await import('$lib/server/auth/sessions');
-    const session = createSession();
+    const passwordHash = '$argon2id$test-fingerprint';
+    const session = createSession(passwordHash);
     const stored = getDatabase().prepare('SELECT token_hash FROM auth_sessions').get() as {
       token_hash: string;
     };
     expect(stored.token_hash).toBe(sha256(session.token));
     expect(stored.token_hash).not.toContain(session.token);
-    expect(validateSession(session.token)).toBe(true);
+    expect(validateSession(session.token, passwordHash)).toBe(true);
     deleteSession(session.token);
-    expect(validateSession(session.token)).toBe(false);
+    expect(validateSession(session.token, passwordHash)).toBe(false);
   });
 
   it('creates a consistent backup that passes restore inspection', async () => {

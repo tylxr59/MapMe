@@ -6,6 +6,11 @@ const config = {
   preprocess: vitePreprocess(),
   kit: {
     adapter: adapter({ precompress: true }),
+    csrf: {
+      // adapter-node cannot infer plain HTTP without ORIGIN. MapMe performs the
+      // equivalent check in hooks using its persisted public address.
+      trustedOrigins: ['*']
+    },
     csp: {
       mode: 'auto',
       directives: {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { building, dev } from '$app/environment';
+import { dev } from '$app/environment';
 import { resolve } from 'node:path';
 
 const booleanEnv = (defaultValue: 'true' | 'false' = 'false') =>
@@ -25,7 +25,7 @@ const environmentSchema = z
       .string()
       .min(1)
       .default(dev ? './data/backups' : '/data/backups'),
-    AUTH_MODE: z.enum(['none', 'password', 'proxy']).default('none'),
+    AUTH_MODE: z.enum(['none', 'password', 'proxy']).optional(),
     AUTH_PASSWORD_HASH: z.string().default(''),
     AUTH_SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
     AUTH_PROXY_HEADER: z
@@ -60,13 +60,6 @@ const environmentSchema = z
     RESTORE_MAX_SIZE_MB: z.coerce.number().int().min(1).max(10_240).default(2048)
   })
   .superRefine((value, context) => {
-    if (!dev && !building && !value.ORIGIN) {
-      context.addIssue({
-        code: 'custom',
-        path: ['ORIGIN'],
-        message: 'ORIGIN is required in production'
-      });
-    }
     if (value.AUTH_MODE === 'password' && !value.AUTH_PASSWORD_HASH.startsWith('$argon2id$')) {
       context.addIssue({
         code: 'custom',
@@ -96,10 +89,11 @@ const env = parsed.data;
 export const privateConfig = Object.freeze({
   port: env.PORT,
   origin: env.ORIGIN ?? 'http://localhost:3000',
+  configuredOrigin: env.ORIGIN,
   databasePath: resolve(env.DATABASE_PATH),
   uploadPath: resolve(env.UPLOAD_PATH),
   backupPath: resolve(env.BACKUP_PATH),
-  authMode: env.AUTH_MODE,
+  authMode: env.AUTH_MODE ?? 'none',
   authPasswordHash: env.AUTH_PASSWORD_HASH,
   authSessionTtlDays: env.AUTH_SESSION_TTL_DAYS,
   authProxyHeader: env.AUTH_PROXY_HEADER.toLowerCase(),

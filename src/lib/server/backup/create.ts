@@ -9,7 +9,7 @@ import { pipeline } from 'node:stream/promises';
 import type { BackupManifest } from '$lib/types';
 import { getDatabase } from '$lib/server/db/driver';
 import { storagePaths, safeStoragePath } from '$lib/server/storage/paths';
-import { publicConfig } from '$lib/server/config/public';
+import { appVersion } from '$lib/server/config/public';
 import { mutationLock } from '$lib/server/mutation-lock';
 
 const ZipArchive = (
@@ -64,7 +64,7 @@ export async function createBackup(): Promise<{
       const databaseInfo = await stat(snapshotPath);
       const manifest: BackupManifest = {
         formatVersion: 1,
-        appVersion: publicConfig.appVersion,
+        appVersion,
         schemaVersion: schema.version,
         createdAt: new Date().toISOString(),
         database: {

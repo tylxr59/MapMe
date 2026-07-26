@@ -149,7 +149,7 @@
         <PlaceList places={data.places} {selectedId} onselect={selectPlace} />
       </div>
       <footer class="sidebar-footer">
-        <a class="settings" href="/manage/categories">
+        <a class="settings" href="/manage/general">
           <Settings2 size={18} />
           <span>Settings</span>
         </a>

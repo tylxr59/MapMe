@@ -8,11 +8,11 @@ export function sha256(value: string | Uint8Array): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
-function passwordFingerprint(): string {
-  return sha256(privateConfig.authPasswordHash);
+function passwordFingerprint(passwordHash: string): string {
+  return sha256(passwordHash);
 }
 
-export function createSession(): { token: string; expiresAt: Date } {
+export function createSession(passwordHash: string): { token: string; expiresAt: Date } {
   const token = randomBytes(32).toString('base64url');
   const now = new Date();
   const expiresAt = new Date(now.getTime() + privateConfig.authSessionTtlDays * 86_400_000);
@@ -25,7 +25,7 @@ export function createSession(): { token: string; expiresAt: Date } {
     )
     .run(
       sha256(token),
-      passwordFingerprint(),
+      passwordFingerprint(passwordHash),
       now.toISOString(),
       expiresAt.toISOString(),
       now.toISOString()
@@ -33,7 +33,7 @@ export function createSession(): { token: string; expiresAt: Date } {
   return { token, expiresAt };
 }
 
-export function validateSession(token: string): boolean {
+export function validateSession(token: string, passwordHash: string): boolean {
   if (token.length < 32 || token.length > 100) return false;
   const database = getDatabase();
   const now = new Date().toISOString();
@@ -45,7 +45,7 @@ export function validateSession(token: string): boolean {
        FROM auth_sessions
        WHERE token_hash = ? AND password_fingerprint = ? AND expires_at > ?`
     )
-    .get(tokenHash, passwordFingerprint(), now);
+    .get(tokenHash, passwordFingerprint(passwordHash), now);
   if (!row) return false;
   database
     .prepare('UPDATE auth_sessions SET last_seen_at = ? WHERE token_hash = ?')

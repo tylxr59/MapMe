@@ -17,8 +17,6 @@ export default defineConfig({
       ...process.env,
       HOST: '127.0.0.1',
       PORT: '4173',
-      ORIGIN: 'http://127.0.0.1:4173',
-      AUTH_MODE: 'none',
       DATABASE_PATH: './data/e2e/database.sqlite',
       UPLOAD_PATH: './data/e2e/uploads',
       BACKUP_PATH: './data/e2e/backups',

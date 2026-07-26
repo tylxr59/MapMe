@@ -1,6 +1,7 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
 import packageJson from '../../../../../../../package.json';
 import { privateConfig } from '$lib/server/config/private';
+import { getAppConfig } from '$lib/server/config/app';
 import { storagePaths } from '$lib/server/storage/paths';
 import { originOnlyReferer, parseTileCoordinates, TileCache } from '$lib/server/tiles/cache';
 
@@ -27,7 +28,10 @@ export const GET: RequestHandler = async ({ params, request }) => {
   try {
     const tile = await tileCache.get(
       coordinates,
-      originOnlyReferer(request.headers.get('referer'), privateConfig.origin)
+      originOnlyReferer(
+        request.headers.get('referer'),
+        getAppConfig()?.origin ?? privateConfig.origin
+      )
     );
     const headers = new Headers({
       'cache-control':

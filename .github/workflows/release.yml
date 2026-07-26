@@ -74,7 +74,6 @@ jobs:
             port=$([ "$platform" = amd64 ] && echo 4300 || echo 4301)
             docker run -d --name "mapme-${platform}" \
               --platform "linux/${platform}" \
-              -e "ORIGIN=http://127.0.0.1:${port}" \
               -p "${port}:3000" \
               "${IMAGE_NAME}:${version}"
             for attempt in $(seq 1 60); do
@@ -88,6 +87,7 @@ jobs:
             done
             test "$(docker inspect --format='{{.State.Health.Status}}' "mapme-${platform}")" = healthy
             curl --fail "http://127.0.0.1:${port}/healthz"
+            test "$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:${port}/")" = 303
             docker rm -f "mapme-${platform}"
           done
       - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228

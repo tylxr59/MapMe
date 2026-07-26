@@ -21,24 +21,4 @@
   <Requires/>
   <Config Name="Web UI" Target="3000" Default="3000" Mode="tcp" Description="MapMe HTTP port" Type="Port" Display="always" Required="true" Mask="false">3000</Config>
   <Config Name="Application data" Target="/data" Default="/mnt/user/appdata/mapme" Mode="rw" Description="SQLite database, uploads, and backups" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/mapme</Config>
-  <Config Name="Public origin" Target="ORIGIN" Default="http://[IP]:[PORT:3000]" Mode="" Description="Exact externally visible URL, including scheme and port" Type="Variable" Display="always" Required="true" Mask="false">http://[IP]:[PORT:3000]</Config>
-  <Config Name="Authentication mode" Target="AUTH_MODE" Default="none" Mode="" Description="none, password, or proxy" Type="Variable" Display="always" Required="true" Mask="false">none</Config>
-  <Config Name="Password hash" Target="AUTH_PASSWORD_HASH" Default="" Mode="" Description="Argon2id hash generated with the image hash-password command" Type="Variable" Display="always" Required="false" Mask="true"/>
-  <Config Name="Proxy identity header" Target="AUTH_PROXY_HEADER" Default="Remote-User" Mode="" Description="Identity header trusted in proxy mode" Type="Variable" Display="advanced-hide" Required="false" Mask="false">Remote-User</Config>
-  <Config Name="Trusted proxy CIDRs" Target="AUTH_PROXY_TRUSTED_CIDRS" Default="" Mode="" Description="Comma-separated immediate proxy networks" Type="Variable" Display="advanced-hide" Required="false" Mask="false"/>
-  <Config Name="Tile URL" Target="TILE_URL" Default="https://tile.openstreetmap.org/{z}/{x}/{y}.png" Mode="" Description="OSM-compatible raster tile template" Type="Variable" Display="always" Required="true" Mask="false">https://tile.openstreetmap.org/{z}/{x}/{y}.png</Config>
-  <Config Name="Tile attribution" Target="TILE_ATTRIBUTION" Default="© OpenStreetMap contributors" Mode="" Description="Visible provider attribution" Type="Variable" Display="always" Required="true" Mask="false">© OpenStreetMap contributors</Config>
-  <Config Name="Tile maximum zoom" Target="TILE_MAX_ZOOM" Default="19" Mode="" Description="Maximum supported tile zoom" Type="Variable" Display="advanced-hide" Required="true" Mask="false">19</Config>
-  <Config Name="Tile caching proxy" Target="TILE_PROXY_ENABLED" Default="true" Mode="" Description="Serve tiles through MapMe to improve privacy compatibility and cache repeat requests" Type="Variable" Display="always" Required="true" Mask="false">true</Config>
-  <Config Name="Tile cache maximum size" Target="TILE_CACHE_MAX_MB" Default="512" Mode="" Description="Maximum persistent tile cache size in MiB" Type="Variable" Display="advanced-hide" Required="true" Mask="false">512</Config>
-  <Config Name="Enable geocoding" Target="GEOCODING_ENABLED" Default="true" Mode="" Description="Enable explicit address and POI search" Type="Variable" Display="always" Required="true" Mask="false">true</Config>
-  <Config Name="Geocoding provider" Target="GEOCODING_PROVIDER" Default="nominatim" Mode="" Description="Currently supported: nominatim" Type="Variable" Display="advanced-hide" Required="true" Mask="false">nominatim</Config>
-  <Config Name="Geocoding URL" Target="GEOCODING_URL" Default="https://nominatim.openstreetmap.org" Mode="" Description="Nominatim-compatible endpoint" Type="Variable" Display="advanced-hide" Required="true" Mask="false">https://nominatim.openstreetmap.org</Config>
-  <Config Name="Geocoding API key" Target="GEOCODING_API_KEY" Default="" Mode="" Description="Optional key for a configured provider" Type="Variable" Display="advanced-hide" Required="false" Mask="true"/>
-  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="Runtime user ID (Unraid nobody is 99)" Type="Variable" Display="advanced-hide" Required="true" Mask="false">99</Config>
-  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Runtime group ID (Unraid users is 100)" Type="Variable" Display="advanced-hide" Required="true" Mask="false">100</Config>
-  <Config Name="Timezone" Target="TZ" Default="America/New_York" Mode="" Description="Container timezone" Type="Variable" Display="advanced-hide" Required="true" Mask="false">America/New_York</Config>
-  <Config Name="Upload maximum MiB" Target="UPLOAD_MAX_FILE_SIZE_MB" Default="15" Mode="" Description="Maximum size of one photo" Type="Variable" Display="advanced-hide" Required="true" Mask="false">15</Config>
-  <Config Name="Import maximum MiB" Target="IMPORT_MAX_SIZE_MB" Default="25" Mode="" Description="Maximum GeoJSON, CSV, or KML upload" Type="Variable" Display="advanced-hide" Required="true" Mask="false">25</Config>
-  <Config Name="Restore maximum MiB" Target="RESTORE_MAX_SIZE_MB" Default="2048" Mode="" Description="Maximum backup ZIP upload" Type="Variable" Display="advanced-hide" Required="true" Mask="false">2048</Config>
 </Container>

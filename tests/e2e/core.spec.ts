@@ -1,5 +1,25 @@
 import { expect, test } from '@playwright/test';
 
+test('completes first-run setup without container configuration', async ({ page }) => {
+  const blocked = await page.request.post('/setup', {
+    headers: { origin: 'https://untrusted.example' },
+    form: {
+      origin: 'http://127.0.0.1:4173',
+      authMode: 'none'
+    }
+  });
+  expect(blocked.status()).toBe(403);
+
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/setup$/);
+  await expect(page.getByRole('heading', { name: 'Make MapMe yours' })).toBeVisible();
+  await expect(page.getByLabel('Public address')).toHaveValue('http://127.0.0.1:4173');
+  await page.getByText('No sign-in', { exact: true }).click();
+  await page.getByRole('button', { name: 'Finish setup' }).click();
+  await expect(page).toHaveURL('http://127.0.0.1:4173/');
+  await expect(page.locator('.leaflet-container')).toBeVisible();
+});
+
 test('centers the initial map on the user location', async ({ page, context }) => {
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 42.3601, longitude: -71.0589 });
@@ -58,7 +78,7 @@ test('uses one collapsible sidebar for places and settings', async ({ page }) =>
   await expect(sidebar).toBeVisible();
   await expect(sidebar.getByRole('link', { name: 'Settings' })).toHaveAttribute(
     'href',
-    '/manage/categories'
+    '/manage/general'
   );
   await expect(page.getByRole('button', { name: /add place/i })).toBeVisible();
 

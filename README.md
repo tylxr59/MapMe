@@ -12,11 +12,14 @@ docker run -d \
   --restart unless-stopped \
   -p 3000:3000 \
   -v /path/to/mapme-data:/data \
-  -e ORIGIN=http://localhost:3000 \
   ghcr.io/tylxr59/mapme:latest
 ```
 
-Open `http://localhost:3000`. All persistent data is under `/data`:
+Open `http://localhost:3000` and complete the first-run page. MapMe detects the address you used,
+offers password, trusted-proxy, or private-network access, and stores the result in `/data`.
+Complete setup before exposing a new instance to an untrusted network.
+
+All persistent data is under `/data`:
 
 ```text
 /data/
@@ -30,27 +33,18 @@ Open `http://localhost:3000`. All persistent data is under `/data`:
 
 Only run one MapMe container against a data directory.
 
-## Password authentication
+## Access settings
 
-Generate an Argon2id hash interactively:
-
-```sh
-docker run --rm -it ghcr.io/tylxr59/mapme:latest hash-password
-```
-
-Set:
-
-```text
-AUTH_MODE=password
-AUTH_PASSWORD_HASH=$argon2id$...
-ORIGIN=https://places.example.com
-```
-
-The plaintext password is never stored. Changing the hash invalidates existing sessions.
+The first-run page recommends password protection and hashes the password with Argon2id before it
+is stored. The plaintext password is never stored. Change the public address, access mode, or
+password later under **Settings → General**; changing access credentials invalidates old sessions.
 
 ## Reverse-proxy authentication
 
-Set `AUTH_MODE=proxy`, `AUTH_PROXY_HEADER`, and a comma-separated `AUTH_PROXY_TRUSTED_CIDRS`. MapMe accepts the identity header only when the immediate connection is from one of those networks. Keep port 3000 unreachable except through the authenticating proxy.
+Choose **Reverse proxy** during first-run setup or under **Settings → General**, then enter the
+identity header and comma-separated trusted proxy CIDRs. MapMe accepts the identity header only
+when the immediate connection is from one of those networks. Keep port 3000 unreachable except
+through the authenticating proxy.
 
 ## Geocoding and tiles
 
@@ -108,33 +102,49 @@ Then open **Docker → Add Container** and select **MapMe** from the Template dr
 
 Open **Docker → Add Container** and configure these container fields:
 
-| Field        | Value                               |
-| ------------ | ----------------------------------- |
-| Name         | `MapMe`                             |
-| Repository   | `ghcr.io/tylxr59/mapme:latest`      |
-| Network Type | `Bridge`                            |
-| Port mapping | Host `3000` → Container `3000`      |
-| Path mapping | `/mnt/user/appdata/mapme` → `/data` |
+| Field        | Value                                |
+| ------------ | ------------------------------------ |
+| Name         | `MapMe`                              |
+| Repository   | `ghcr.io/tylxr59/mapme:latest`       |
+| Network Type | Your normal Docker network           |
+| Port mapping | Host `3000` → Container `3000`       |
+| Path mapping | `/mnt/user/appdata/mapme/` → `/data` |
 
-Use **Add another Path, Port, Variable, Label or Device** to add these variables:
-
-| Config Type | Name                | Key         | Value                                         |
-| ----------- | ------------------- | ----------- | --------------------------------------------- |
-| Variable    | Public origin       | `ORIGIN`    | `http://192.168.1.50:3000`                    |
-| Variable    | Authentication mode | `AUTH_MODE` | `none`                                        |
-| Variable    | PUID                | `PUID`      | `99`                                          |
-| Variable    | PGID                | `PGID`      | `100`                                         |
-| Variable    | Timezone            | `TZ`        | Your timezone, for example `America/New_York` |
-
-`ORIGIN` is required. Replace the example with the exact URL you will enter in your browser,
-including `http://` or `https://` and any non-default port. For example, use
-`http://192.168.1.50:8080` when mapping host port 8080, or `https://map.example.com` when MapMe is
-published through an HTTPS reverse proxy. Do not use the container's internal IP.
-
-If an existing container reports `ORIGIN is required in production`, edit it in the Docker tab,
-add the `ORIGIN` variable above, and click **Apply**.
+Click **Apply**, open the Web UI, and complete first-run setup. No container variables are
+required. The included Unraid template exposes only the port and application-data path.
 
 Docker Compose is not required.
+
+### Optional environment overrides
+
+MapMe's defaults are ready for normal use. Advanced operators can still set the documented values
+in [`.env.example`](.env.example) for custom tile, geocoding, storage, and upload behavior.
+`ORIGIN`, `AUTH_MODE`, `AUTH_PASSWORD_HASH`, `AUTH_PROXY_HEADER`, and
+`AUTH_PROXY_TRUSTED_CIDRS` are supported as one-time bootstrap values for automated or v1.0
+deployments. Once saved, access settings are managed in the application.
+
+## Nginx Proxy Manager
+
+MapMe works behind a standard Nginx Proxy Manager Proxy Host:
+
+1. Set the domain name, forward scheme `http`, MapMe's reachable host or container name, and
+   forward port `3000`.
+2. On the SSL tab, request or select a certificate and enable **Force SSL**.
+3. Open MapMe through its final `https://` domain for the first visit. The setup page reads NPM's
+   forwarded host and protocol headers and should show that HTTPS address.
+4. Keep MapMe's direct port private if the domain is meant to be its only entry point.
+
+MapMe does not require WebSocket support. For complete backup restores through NPM, add this under
+the Proxy Host's **Advanced** tab so Nginx accepts and streams MapMe's configured maximum upload:
+
+```nginx
+client_max_body_size 2100m;
+proxy_request_buffering off;
+```
+
+NPM's normal Proxy Host mode is separate from MapMe's **Reverse proxy** access mode. Use MapMe's
+password option for the simplest setup. Only choose its reverse-proxy access mode when your
+authentication proxy deliberately supplies the configured identity header.
 
 ## Development
 

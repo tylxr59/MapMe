@@ -1,7 +1,7 @@
 import type { LayoutServerLoad } from './$types';
-import { publicConfig } from '$lib/server/config/public';
+import { getPublicConfig } from '$lib/server/config/public';
 
 export const load: LayoutServerLoad = ({ locals }) => ({
-  config: publicConfig,
+  config: getPublicConfig(),
   identity: locals.identity
 });
