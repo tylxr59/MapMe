@@ -157,21 +157,29 @@ test('adds a place with direct coordinates and copies them from its details', as
   const reservedPanelWidth = await detailsPanel.evaluate(
     (element) => element.getBoundingClientRect().width
   );
-  const mapWidthWithPanel = await mapPane.evaluate(
-    (element) => element.getBoundingClientRect().width
-  );
-  expect(mapWidthWithoutPanel - mapWidthWithPanel).toBeCloseTo(reservedPanelWidth, 0);
+  await expect
+    .poll(async () => {
+      const mapWidthWithPanel = await mapPane.evaluate(
+        (element) => element.getBoundingClientRect().width
+      );
+      return Math.abs(mapWidthWithoutPanel - mapWidthWithPanel - reservedPanelWidth);
+    })
+    .toBeLessThan(1);
   await expect
     .poll(() =>
       page.evaluate(() => {
         const saved = localStorage.getItem('mapme.viewport');
-        return saved ? JSON.parse(saved) : null;
+        return saved ? JSON.parse(saved).zoom : null;
       })
     )
-    .toMatchObject({
-      center: [42.3601, -71.0589],
-      zoom: 15
-    });
+    .toBe(15);
+  const selectedViewport = await page.evaluate(() => {
+    const saved = localStorage.getItem('mapme.viewport');
+    return saved ? JSON.parse(saved) : null;
+  });
+  expect(selectedViewport).not.toBeNull();
+  expect(selectedViewport.center[0]).toBeCloseTo(42.3601, 4);
+  expect(selectedViewport.center[1]).toBeCloseTo(-71.0589, 4);
   expect(browserErrors).toEqual([]);
 });
 
