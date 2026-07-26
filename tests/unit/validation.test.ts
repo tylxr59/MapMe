@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { placeInputSchema } from '$lib/schemas/place';
 import { filtersSchema } from '$lib/schemas/filters';
 import { safeFtsQuery } from '$lib/server/db/queries/search';
-import { categoryIconSvg, isValidCategoryIcon } from '$lib/icons/category-icons';
+import {
+  categoryIconSvg,
+  isValidCategoryIcon,
+  searchCategoryIcons
+} from '$lib/icons/category-icons';
 import { safeStoragePath } from '$lib/server/storage/paths';
 
 const validPlace = {
@@ -10,7 +14,6 @@ const validPlace = {
   latitude: 40.7,
   longitude: -74,
   categoryId: '00000000-0000-4000-8000-000000000008',
-  tagIds: [],
   status: 'saved',
   isFavorite: false,
   isArchived: false,
@@ -65,6 +68,12 @@ describe('trusted icon and storage handling', () => {
     expect(isValidCategoryIcon('<script>')).toBe(false);
     expect(categoryIconSvg('<script>')).toContain('<svg');
     expect(categoryIconSvg('<script>')).not.toContain('<script>');
+  });
+
+  it('finds place-oriented Lucide icons with fuzzy aliases', () => {
+    expect(searchCategoryIcons('shooting range')).toContain('target');
+    expect(searchCategoryIcons('overlanding')).toContain('truck');
+    expect(searchCategoryIcons('urbex')).toContain('warehouse');
   });
 
   it('rejects filenames and traversal paths outside generated storage names', () => {

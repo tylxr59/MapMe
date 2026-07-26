@@ -16,7 +16,6 @@ export function exportCsv(): string {
     rating: place.rating ?? '',
     date_visited: place.dateVisited ?? '',
     source_url: place.sourceUrl ?? '',
-    tags: JSON.stringify(place.tags.map((tag) => tag.name)),
     created_at: place.createdAt,
     updated_at: place.updatedAt
   }));
@@ -36,7 +35,6 @@ export function exportCsv(): string {
       'rating',
       'date_visited',
       'source_url',
-      'tags',
       'created_at',
       'updated_at'
     ]

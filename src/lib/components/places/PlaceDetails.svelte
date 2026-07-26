@@ -3,17 +3,21 @@
     Archive,
     CalendarDays,
     Camera,
+    Check,
+    Copy,
     Download,
     Edit3,
     ExternalLink,
     Heart,
     ImagePlus,
+    LocateFixed,
     MapPin,
     Navigation,
     Star,
     Trash2,
     X
   } from '@lucide/svelte';
+  import { onDestroy } from 'svelte';
   import type { PlaceDetail } from '$lib/types';
 
   let {
@@ -34,6 +38,47 @@
   let uploadInput: HTMLInputElement;
   let photoMessage = $state('');
   let uploading = $state(false);
+  let copiedCoordinates = $state<string | null>(null);
+  let copyTimer: ReturnType<typeof setTimeout> | undefined;
+  const coordinateText = $derived(`${place.latitude.toFixed(6)}, ${place.longitude.toFixed(6)}`);
+
+  onDestroy(() => clearTimeout(copyTimer));
+
+  function copyWithSelection(value: string) {
+    const input = document.createElement('textarea');
+    input.value = value;
+    input.setAttribute('readonly', '');
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+
+    try {
+      if (!document.execCommand('copy')) throw new Error('Copy was not accepted');
+    } finally {
+      input.remove();
+    }
+  }
+
+  async function copyCoords() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(coordinateText);
+        } catch {
+          copyWithSelection(coordinateText);
+        }
+      } else {
+        copyWithSelection(coordinateText);
+      }
+
+      copiedCoordinates = coordinateText;
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => (copiedCoordinates = null), 2000);
+    } catch {
+      copiedCoordinates = null;
+    }
+  }
 
   async function deletePlace() {
     if (!deleting) {
@@ -88,57 +133,69 @@
 </script>
 
 <article class="details">
-  <header>
-    <span class="category" style:background={place.category.color}
-      >{@html place.category.iconSvg}</span
-    >
-    <div class="title">
-      <span>{place.category.name}</span>
-      <h2>{place.name}</h2>
+  <header class="hero">
+    <div class="heading">
+      <span class="category" style:background={place.category.color}
+        >{@html place.category.iconSvg}</span
+      >
+      <div class="title">
+        <span>{place.category.name}</span>
+        <h2 title={place.name}>{place.name}</h2>
+      </div>
     </div>
     <button type="button" onclick={onclose} class="icon-button" aria-label="Close details"
       ><X /></button
     >
-  </header>
-  <div class="body">
     <div class="badges">
       <span>{place.status.replaceAll('_', ' ')}</span>
       {#if place.isFavorite}<span><Heart size={14} fill="currentColor" /> Favorite</span>{/if}
       {#if place.isArchived}<span><Archive size={14} /> Archived</span>{/if}
       {#if place.rating}<span><Star size={14} fill="currentColor" /> {place.rating}/5</span>{/if}
+      {#if place.dateVisited}<span><CalendarDays size={14} /> {place.dateVisited}</span>{/if}
     </div>
-    <section class="facts">
-      <div>
-        <MapPin size={17} /><span
-          >{place.address || `${place.latitude.toFixed(6)}, ${place.longitude.toFixed(6)}`}</span
-        >
+  </header>
+
+  <div class="body">
+    <section class="card location-card">
+      <div class="section-heading">
+        <span class="section-icon"><MapPin size={16} /></span>
+        <h3>Location</h3>
       </div>
-      {#if place.dateVisited}<div>
-          <CalendarDays size={17} /><span>Visited {place.dateVisited}</span>
-        </div>{/if}
-      {#if place.sourceUrl}<div>
-          <ExternalLink size={17} /><a
-            href={place.sourceUrl}
-            target="_blank"
-            rel="noreferrer noopener">Open source link</a
+      {#if place.address}<p class="address">{place.address}</p>{/if}
+      <div class="coordinate-row">
+        <LocateFixed size={15} aria-hidden="true" />
+        <span class="coordinate-value">{coordinateText}</span>
+        <button type="button" class="copy-coordinates" onclick={copyCoords}>
+          {#if copiedCoordinates === coordinateText}
+            <Check size={14} /> Copied
+          {:else}
+            <Copy size={14} /> Copy coords
+          {/if}
+        </button>
+      </div>
+      <div class="location-actions">
+        <button type="button" class="maps" onclick={sendToMaps}>
+          <Navigation size={15} /> Directions
+        </button>
+        {#if place.sourceUrl}
+          <a href={place.sourceUrl} target="_blank" rel="noreferrer noopener"
+            ><ExternalLink size={15} /> Source link</a
           >
-        </div>{/if}
+        {/if}
+      </div>
     </section>
-    {#if place.description}<section>
-        <h3>Notes</h3>
+
+    {#if place.description}<section class="card">
+        <div class="section-heading"><h3>Notes</h3></div>
         <p class="notes">{place.description}</p>
       </section>{/if}
-    {#if place.tags.length}
-      <section>
-        <h3>Tags</h3>
-        <div class="tags">
-          {#each place.tags as tag}<span>{tag.name}</span>{/each}
+
+    <section class="card photo-card">
+      <div class="section-heading photo-heading">
+        <div>
+          <span class="section-icon"><Camera size={16} /></span>
+          <h3>Photos</h3>
         </div>
-      </section>
-    {/if}
-    <section>
-      <h3>Photos</h3>
-      <div class="photo-actions">
         <input
           bind:this={uploadInput}
           class="sr-only"
@@ -148,7 +205,11 @@
           multiple
           onchange={uploadPhoto}
         />
-        <button type="button" onclick={() => uploadInput.click()} disabled={uploading}
+        <button
+          type="button"
+          class="add-photos"
+          onclick={() => uploadInput.click()}
+          disabled={uploading}
           ><ImagePlus size={15} /> {uploading ? 'Uploading…' : 'Add photos'}</button
         >
       </div>
@@ -171,20 +232,20 @@
             </figure>
           {/each}
         </div>
-      {:else}<div class="photo-empty"><Camera size={20} /> No photos yet</div>{/if}
+      {:else}<div class="photo-empty">
+          <ImagePlus size={20} /> Add a photo to remember this place
+        </div>{/if}
     </section>
-    <small
-      >Saved {new Date(place.createdAt).toLocaleDateString()} · Updated {new Date(
-        place.updatedAt
-      ).toLocaleDateString()}</small
-    >
+
+    <div class="timestamps">
+      <span>Added {new Date(place.createdAt).toLocaleDateString()}</span>
+      <span>Updated {new Date(place.updatedAt).toLocaleDateString()}</span>
+    </div>
   </div>
+
   <footer>
     <button type="button" class:confirm={deleting} onclick={deletePlace}
       ><Trash2 size={16} /> {deleting ? 'Confirm delete' : 'Delete'}</button
-    >
-    <button type="button" class="maps" onclick={sendToMaps}
-      ><Navigation size={16} /> Send to Maps</button
     >
     <button type="button" class="edit" onclick={onedit}><Edit3 size={16} /> Edit place</button>
   </footer>
@@ -195,27 +256,36 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    background: var(--paper);
+  }
+
+  .hero {
+    position: relative;
+    display: grid;
+    gap: 0.9rem;
+    padding: 1.15rem 3.75rem 1rem 1.15rem;
+    border-bottom: 1px solid var(--line);
     background: var(--cream);
   }
-  header {
+  .heading {
     display: flex;
-    gap: 0.8rem;
     align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid var(--line);
+    gap: 0.85rem;
   }
   .category {
-    width: 2.6rem;
-    height: 2.6rem;
+    width: 3rem;
+    height: 3rem;
     flex: 0 0 auto;
     display: grid;
     place-items: center;
-    border-radius: 0.8rem;
+    border: 2px solid color-mix(in srgb, white 70%, transparent);
+    border-radius: 1rem;
     color: white;
+    box-shadow: 0 5px 14px color-mix(in srgb, var(--shadow-panel) 70%, transparent);
   }
   .category :global(svg) {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.35rem;
+    height: 1.35rem;
   }
   .title {
     min-width: 0;
@@ -223,78 +293,200 @@
   }
   .title span {
     color: var(--green-700);
-    font-size: 0.7rem;
-    font-weight: 800;
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
   }
   h2 {
-    margin: 0.1rem 0 0;
-    font-size: 1.25rem;
-    white-space: nowrap;
+    display: -webkit-box;
     overflow: hidden;
+    margin: 0.18rem 0 0;
+    font-size: 1.24rem;
+    line-height: 1.22;
     text-overflow: ellipsis;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
   .icon-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: grid;
+    width: 2.2rem;
+    height: 2.2rem;
+    place-items: center;
     border: 0;
+    border-radius: 999px;
     background: transparent;
     color: var(--ink-muted);
   }
+  .icon-button:hover {
+    background: var(--surface-muted);
+    color: var(--text);
+  }
+  .icon-button :global(svg) {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
   .body {
     flex: 1;
     overflow: auto;
     display: grid;
     align-content: start;
-    gap: 1.15rem;
-    padding: 1rem;
+    gap: 0.75rem;
+    padding: 0.85rem;
   }
-  .badges,
-  .tags {
+
+  .badges {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
   }
-  .badges span,
-  .tags span {
+  .badges span {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
     border-radius: 999px;
     background: var(--badge-bg);
     color: var(--badge-text);
-    padding: 0.35rem 0.55rem;
-    font-size: 0.72rem;
-    font-weight: 700;
+    padding: 0.32rem 0.58rem;
+    font-size: 0.7rem;
+    font-weight: 750;
     text-transform: capitalize;
   }
-  .facts {
+
+  .card {
     display: grid;
-    gap: 0.65rem;
+    gap: 0.75rem;
+    padding: 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    background: var(--cream);
+    box-shadow: 0 1px 2px var(--shadow-soft);
   }
-  .facts div {
+  .section-heading {
     display: flex;
-    align-items: flex-start;
-    gap: 0.55rem;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    line-height: 1.4;
+    min-height: 1.5rem;
+    align-items: center;
+    gap: 0.45rem;
   }
-  .facts :global(svg) {
-    flex: 0 0 auto;
-    margin-top: 0.05rem;
+  .section-icon {
+    display: grid;
+    width: 1.65rem;
+    height: 1.65rem;
+    place-items: center;
+    border-radius: 0.48rem;
+    background: var(--surface-selected);
     color: var(--green-700);
   }
   h3 {
-    margin: 0 0 0.5rem;
+    margin: 0;
+    color: var(--text);
     font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.055em;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--ink-muted);
   }
+
+  .address {
+    margin: -0.1rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+  .coordinate-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.45rem;
+    padding: 0.35rem 0.4rem 0.35rem 0.65rem;
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+  }
+  .coordinate-row > :global(svg) {
+    flex: 0 0 auto;
+    color: var(--green-700);
+  }
+  .coordinate-value {
+    min-width: 0;
+    flex: 1;
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .copy-coordinates {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border: 0;
+    border-radius: 0.48rem;
+    background: var(--cream);
+    color: var(--green-800);
+    padding: 0.42rem 0.58rem;
+    box-shadow: 0 1px 2px var(--shadow-soft);
+    font-size: 0.7rem;
+    font-weight: 750;
+    white-space: nowrap;
+  }
+  .copy-coordinates:hover {
+    background: var(--surface-selected);
+  }
+  .copy-coordinates:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  .location-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  .location-actions button,
+  .location-actions a,
+  .add-photos {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 2rem;
+    border: 0;
+    border-radius: 0.55rem;
+    background: var(--surface-muted);
+    color: var(--green-800);
+    padding: 0.45rem 0.65rem;
+    font-size: 0.74rem;
+    font-weight: 750;
+    text-decoration: none;
+  }
+  .location-actions .maps {
+    background: var(--accent-bg);
+    color: var(--accent-text);
+  }
+
   .notes {
     margin: 0;
+    color: var(--text-secondary);
     white-space: pre-wrap;
     line-height: 1.55;
     font-size: 0.9rem;
+  }
+
+  .photo-heading {
+    justify-content: space-between;
+  }
+  .photo-heading > div {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .add-photos {
+    min-height: 1.9rem;
+    padding: 0.4rem 0.58rem;
   }
   .photos {
     display: grid;
@@ -329,59 +521,79 @@
     background: #152b20dd;
     color: white;
   }
-  .photo-actions button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    border: 0;
-    border-radius: 0.5rem;
-    background: var(--surface-muted);
-    color: var(--green-800);
-    padding: 0.5rem 0.65rem;
-    font-size: 0.75rem;
-    font-weight: 750;
-  }
   .photo-error {
+    margin: 0;
     color: var(--danger);
     font-size: 0.75rem;
   }
   .photo-empty {
     display: flex;
+    min-height: 4.5rem;
     align-items: center;
+    justify-content: center;
     gap: 0.4rem;
+    border: 1px dashed var(--input-border);
+    border-radius: 0.7rem;
+    background: var(--surface-muted);
     color: var(--ink-muted);
-    font-size: 0.82rem;
+    padding: 0.8rem;
+    font-size: 0.78rem;
+    text-align: center;
   }
-  small {
+
+  .timestamps {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.35rem 1rem;
+    padding: 0.15rem 0.15rem 0.3rem;
     color: var(--ink-muted);
+    font-size: 0.7rem;
   }
+
   footer {
     display: flex;
-    justify-content: space-between;
     gap: 0.5rem;
     padding: 0.8rem 1rem;
     border-top: 1px solid var(--line);
+    background: var(--cream);
+    box-shadow: 0 -6px 18px var(--shadow-soft);
   }
   footer button {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.35rem;
     border: 0;
     border-radius: 0.6rem;
     padding: 0.65rem 0.8rem;
+    font-size: 0.8rem;
     font-weight: 750;
     color: var(--text-secondary);
     background: var(--surface-muted);
   }
   footer .edit {
+    flex: 1;
     background: var(--accent-bg);
     color: var(--accent-text);
-  }
-  footer .maps {
-    margin-left: auto;
   }
   footer .confirm {
     background: var(--danger);
     color: var(--accent-text);
+  }
+
+  @media (max-width: 430px) {
+    .hero {
+      padding-left: 1rem;
+    }
+    .body {
+      padding: 0.75rem;
+    }
+    .coordinate-row {
+      flex-wrap: wrap;
+    }
+    .copy-coordinates {
+      margin-left: auto;
+    }
   }
 </style>

@@ -96,7 +96,11 @@ test('uses one collapsible sidebar for places and settings', async ({ page }) =>
   await expect(sidebar).toBeHidden();
 });
 
-test('adds a place with direct coordinates and finds it in the list', async ({ page }) => {
+test('adds a place with direct coordinates and copies them from its details', async ({
+  page,
+  context
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const placeName = `Playwright Lookout ${Date.now()}`;
   const browserErrors: string[] = [];
   page.on('pageerror', (error) => browserErrors.push(error.message));
@@ -109,6 +113,24 @@ test('adds a place with direct coordinates and finds it in the list', async ({ p
   await page.getByLabel('Longitude').fill('-71.0589');
   await page.getByRole('button', { name: 'Save place' }).click();
   await expect(page.getByText(placeName, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Copy coords' }).click();
+  await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe('42.360100, -71.058900');
+
+  const firstEdit = `${placeName} edited`;
+  await page.getByRole('button', { name: 'Edit place' }).click();
+  await page.getByLabel('Name').fill(firstEdit);
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByRole('heading', { name: firstEdit })).toBeVisible();
+
+  const secondEdit = `${placeName} edited twice`;
+  await page.getByRole('button', { name: 'Edit place' }).click();
+  await expect(page.getByLabel('Name')).toHaveValue(firstEdit);
+  await page.getByLabel('Name').fill(secondEdit);
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByRole('heading', { name: secondEdit })).toBeVisible();
   expect(browserErrors).toEqual([]);
 });
 

@@ -42,7 +42,7 @@
     mobileSidebarOpen = false;
     loadingDetail = true;
     try {
-      const response = await fetch(`/api/places/${id}`);
+      const response = await fetch(`/api/places/${id}`, { cache: 'no-store' });
       const result = await response.json();
       if (response.ok) selectedPlace = result.place;
     } finally {
@@ -106,11 +106,12 @@
     sidebarCollapsed = !sidebarCollapsed;
   }
 
-  async function saved() {
+  async function saved(placeId: string) {
     editorOpen = false;
     editing = false;
     draft = null;
     await invalidateAll();
+    await selectPlace(placeId);
   }
 
   async function deleted() {
@@ -145,7 +146,7 @@
         </a>
       </header>
       <div class="sidebar-content" id="places-sidebar-content">
-        <FilterBar filters={data.filters} categories={data.categories} tags={data.tags} />
+        <FilterBar filters={data.filters} categories={data.categories} />
         <PlaceList places={data.places} {selectedId} onselect={selectPlace} />
       </div>
       <footer class="sidebar-footer">
@@ -237,7 +238,6 @@
           place={editing ? selectedPlace : null}
           coordinates={draft}
           categories={data.categories}
-          tags={data.tags}
           config={data.config}
           oncoordinates={(value) => (draft = value)}
           onclose={() => ((editorOpen = false), (draft = null))}

@@ -11,14 +11,6 @@ import { refreshPlaceSearch } from '$lib/server/db/queries/search';
 import { storagePaths, safeStoragePath } from '$lib/server/storage/paths';
 import { mutationLock } from '$lib/server/mutation-lock';
 
-function replaceTags(placeId: string, tagIds: string[], now: string, database: DatabaseSync): void {
-  database.prepare('DELETE FROM place_tags WHERE place_id = ?').run(placeId);
-  const insert = database.prepare(
-    'INSERT INTO place_tags (place_id, tag_id, created_at) VALUES (?, ?, ?)'
-  );
-  for (const tagId of new Set(tagIds)) insert.run(placeId, tagId, now);
-}
-
 export function insertPlace(
   database: DatabaseSync,
   input: ValidatedPlaceInput,
@@ -53,7 +45,6 @@ export function insertPlace(
       now,
       now
     );
-  replaceTags(id, input.tagIds, now, database);
   refreshPlaceSearch(id, database);
   return id;
 }
@@ -98,7 +89,6 @@ export function updatePlace(id: string, input: ValidatedPlaceInput): PlaceDetail
         id
       );
     if (result.changes !== 1) throw new Error('Place not found');
-    replaceTags(id, input.tagIds, now, database);
     refreshPlaceSearch(id, database);
   });
   return getPlace(id)!;

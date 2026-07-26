@@ -8,12 +8,10 @@ import type {
   ImportPreview,
   ImportRecordResult,
   PlaceInput,
-  PlaceStatus,
-  TagDTO
+  PlaceStatus
 } from '$lib/types';
 import { listCategories } from '$lib/server/db/queries/categories';
 import { findDuplicatePlace } from '$lib/server/db/queries/places';
-import { listTags } from '$lib/server/db/queries/tags';
 import { getDatabase } from '$lib/server/db/driver';
 import { storagePaths } from '$lib/server/storage/paths';
 import { parseCsvImport } from './csv';
@@ -30,7 +28,6 @@ export interface RawImportCandidate {
   address?: unknown;
   description?: unknown;
   category?: unknown;
-  tags?: unknown;
   status?: unknown;
   favorite?: unknown;
   archived?: unknown;
@@ -79,30 +76,6 @@ function categoryId(value: unknown, categories: CategoryDTO[]): string {
   );
 }
 
-function tagIds(value: unknown, tags: TagDTO[]): { ids: string[]; names: string[] } {
-  const values = Array.isArray(value)
-    ? value
-    : typeof value === 'string' && value
-      ? (() => {
-          try {
-            const parsed = JSON.parse(value);
-            return Array.isArray(parsed) ? parsed : [value];
-          } catch {
-            return value.split(';');
-          }
-        })()
-      : [];
-  const names = [
-    ...new Set(values.map((item) => String(item).normalize('NFKC').trim()).filter(Boolean))
-  ].slice(0, 50);
-  return {
-    names,
-    ids: names
-      .map((name) => tags.find((tag) => normalizeName(tag.name) === normalizeName(name))?.id)
-      .filter((id): id is string => Boolean(id))
-  };
-}
-
 export function parseImportSource(format: ParsedImport['format'], content: string): ParsedImport {
   if (format === 'geojson') return { format, records: parseGeoJsonImport(content) };
   if (format === 'csv') return { format, records: parseCsvImport(content) };
@@ -112,9 +85,7 @@ export function parseImportSource(format: ParsedImport['format'], content: strin
 
 export function buildImportPreview(parsed: ParsedImport, token: string): ImportPreview {
   const categories = listCategories();
-  const existingTags = listTags();
   const records: ImportRecordResult[] = parsed.records.slice(0, 10_000).map((raw, index) => {
-    const tags = tagIds(raw.tags, existingTags);
     const candidate = {
       id: raw.id,
       name: raw.name,
@@ -123,17 +94,13 @@ export function buildImportPreview(parsed: ParsedImport, token: string): ImportP
       address: raw.address ?? null,
       description: raw.description ?? null,
       categoryId: categoryId(raw.category, categories),
-      tagIds: tags.ids,
       status: statusValue(raw.status),
       isFavorite: booleanValue(raw.favorite),
       isArchived: booleanValue(raw.archived),
       rating: raw.rating === '' || raw.rating === undefined ? null : raw.rating,
       dateVisited: raw.dateVisited ?? null,
       sourceUrl: raw.sourceUrl ?? null,
-      extraProperties: {
-        ...(raw.extraProperties ?? {}),
-        ...(tags.names.length > tags.ids.length ? { importedTagNames: tags.names } : {})
-      }
+      extraProperties: raw.extraProperties ?? {}
     };
     const validation = placeInputSchema.safeParse(candidate);
     if (!validation.success) {
@@ -159,12 +126,7 @@ export function buildImportPreview(parsed: ParsedImport, token: string): ImportP
       index,
       sourceLabel: raw.sourceLabel,
       valid: true,
-      warnings: [
-        ...(raw.warnings ?? []),
-        ...(tags.names.length > tags.ids.length
-          ? ['New tags will be created when this record is imported.']
-          : [])
-      ],
+      warnings: raw.warnings ?? [],
       errors: [],
       duplicateOf: idCollision
         ? {

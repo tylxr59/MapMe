@@ -1,6 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { getDatabase } from '../driver';
-import { tagNamesForPlace } from './tags';
 
 export function safeFtsQuery(query: string): string {
   return (query.normalize('NFKC').match(/[\p{L}\p{N}_]+/gu) ?? [])
@@ -18,33 +17,21 @@ export function refreshPlaceSearch(placeId: string, database: DatabaseSync = get
   if (!place) return;
   database
     .prepare(
-      `INSERT INTO place_fts (place_id, name, address, description, tags)
-       VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO place_fts (place_id, name, address, description)
+       VALUES (?, ?, ?, ?)`
     )
-    .run(
-      placeId,
-      place.name,
-      place.address ?? '',
-      place.description ?? '',
-      tagNamesForPlace(placeId, database)
-    );
+    .run(placeId, place.name, place.address ?? '', place.description ?? '');
 }
 
 export function rebuildPlaceSearch(database: DatabaseSync = getDatabase()): number {
   database.exec('DELETE FROM place_fts');
   database.exec(`
-    INSERT INTO place_fts (place_id, name, address, description, tags)
+    INSERT INTO place_fts (place_id, name, address, description)
     SELECT
       p.id,
       p.name,
       coalesce(p.address, ''),
-      coalesce(p.description, ''),
-      coalesce((
-        SELECT group_concat(t.name, ' ')
-        FROM place_tags pt
-        JOIN tags t ON t.id = pt.tag_id
-        WHERE pt.place_id = p.id
-      ), '')
+      coalesce(p.description, '')
     FROM places p
   `);
   const row = database.prepare('SELECT count(*) AS count FROM place_fts').get() as {

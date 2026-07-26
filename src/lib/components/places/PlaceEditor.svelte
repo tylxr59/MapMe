@@ -1,13 +1,12 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { Check, LoaderCircle, LocateFixed, Search, X } from '@lucide/svelte';
-  import type { CategoryDTO, PlaceDetail, SafeClientConfig, TagDTO } from '$lib/types';
+  import type { CategoryDTO, PlaceDetail, SafeClientConfig } from '$lib/types';
 
   let {
     place = null,
     coordinates,
     categories,
-    tags,
     config,
     oncoordinates,
     onclose,
@@ -16,11 +15,10 @@
     place?: PlaceDetail | null;
     coordinates: { latitude: number; longitude: number };
     categories: CategoryDTO[];
-    tags: TagDTO[];
     config: SafeClientConfig;
     oncoordinates: (coordinates: { latitude: number; longitude: number }) => void;
     onclose: () => void;
-    onsaved: () => void;
+    onsaved: (placeId: string) => void;
   } = $props();
 
   let latitude = $state(0);
@@ -117,7 +115,16 @@
     use:enhance={() => {
       return async ({ result, update }) => {
         await update();
-        if (result.type === 'success') onsaved();
+        if (result.type === 'success') {
+          const placeId =
+            result.data &&
+            typeof result.data === 'object' &&
+            'placeId' in result.data &&
+            typeof result.data.placeId === 'string'
+              ? result.data.placeId
+              : place?.id;
+          if (placeId) onsaved(placeId);
+        }
       };
     }}
   >
@@ -266,24 +273,6 @@
         placeholder="What do you want to remember?">{place?.description ?? ''}</textarea
       >
     </label>
-    <fieldset class="wide">
-      <legend>Tags</legend>
-      {#if tags.length}
-        <div class="tag-grid">
-          {#each tags as tag}
-            <label class="check"
-              ><input
-                type="checkbox"
-                name="tagIds"
-                value={tag.id}
-                checked={place?.tags.some((item) => item.id === tag.id)}
-              />
-              {tag.name}</label
-            >
-          {/each}
-        </div>
-      {:else}<p class="hint">Create tags from Manage to add more detail.</p>{/if}
-    </fieldset>
     <div class="states wide">
       <label class="check"
         ><input type="checkbox" name="isFavorite" checked={place?.isFavorite} /> Favorite</label
@@ -372,7 +361,6 @@
     line-height: 1.45;
   }
   .wide,
-  fieldset,
   footer,
   .states,
   .geocoder,
@@ -402,23 +390,6 @@
   }
   .coordinate-lookup:disabled {
     opacity: 0.55;
-  }
-  fieldset {
-    margin: 0;
-    border: 1px solid var(--line);
-    border-radius: 0.7rem;
-    padding: 0.7rem;
-  }
-  legend {
-    padding: 0 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 750;
-    color: var(--text-secondary);
-  }
-  .tag-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem 0.8rem;
   }
   .check {
     display: flex;
@@ -498,10 +469,6 @@
   .field-error {
     margin: 0.3rem 0 0;
     color: var(--danger);
-    font-size: 0.78rem;
-  }
-  .hint {
-    color: var(--ink-muted);
     font-size: 0.78rem;
   }
   :global(.spin) {

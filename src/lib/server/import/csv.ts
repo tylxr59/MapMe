@@ -37,7 +37,6 @@ export function parseCsvImport(content: string): RawImportCandidate[] {
     address: row.address,
     description: row.description,
     category: row.category,
-    tags: row.tags,
     status: row.status,
     favorite: row.favorite,
     archived: row.archived,

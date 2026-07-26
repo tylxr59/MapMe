@@ -15,11 +15,12 @@
     Trash2,
     X
   } from '@lucide/svelte';
-  import { categoryIconSvg, suggestedCategoryIcons } from '$lib/icons/category-icons';
+  import CategoryIconPicker from '$lib/components/categories/CategoryIconPicker.svelte';
+  import { categoryIconSvg } from '$lib/icons/category-icons';
 
   let { data, form } = $props();
   let showCreate = $state(false);
-  let newIcon = $state<(typeof suggestedCategoryIcons)[number]>('pin');
+  let newIcon = $state('pin');
   let newColor = $state('#26734C');
   let draftIcons = $state<Record<string, string>>({});
   let draftColors = $state<Record<string, string>>({});
@@ -32,12 +33,6 @@
   let orderValue = $state('');
   let reorderForm: HTMLFormElement;
   let serverCategorySignature = $state('');
-
-  const iconLabel = (name: string) =>
-    name
-      .split('-')
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ');
 
   const categoryIcon = (id: string, fallback: string) => draftIcons[id] ?? fallback;
   const categoryColor = (id: string, fallback: string) => draftColors[id] ?? fallback;
@@ -199,19 +194,9 @@
         <span>Name</span>
         <input name="name" required maxlength="80" placeholder="e.g. Bookstores" />
       </label>
-      <label>
-        <span>Icon</span>
-        <select
-          name="iconName"
-          value={newIcon}
-          onchange={(event) =>
-            (newIcon = event.currentTarget.value as (typeof suggestedCategoryIcons)[number])}
-        >
-          {#each suggestedCategoryIcons as icon}
-            <option value={icon}>{iconLabel(icon)}</option>
-          {/each}
-        </select>
-      </label>
+      <div class="icon-field">
+        <CategoryIconPicker value={newIcon} onchange={(value) => (newIcon = value)} />
+      </div>
       <label class="color-field">
         <span>Color</span>
         <span class="color-control">
@@ -302,20 +287,14 @@
             <span>Name</span>
             <input name="name" value={category.name} required maxlength="80" />
           </label>
-          <label>
-            <span>Icon</span>
-            <select
-              name="iconName"
-              value={category.iconName}
-              onchange={(event) => {
-                draftIcons[category.id] = event.currentTarget.value;
+          <div class="icon-field">
+            <CategoryIconPicker
+              value={categoryIcon(category.id, category.iconName)}
+              onchange={(value) => {
+                draftIcons[category.id] = value;
               }}
-            >
-              {#each suggestedCategoryIcons as icon}
-                <option value={icon}>{iconLabel(icon)}</option>
-              {/each}
-            </select>
-          </label>
+            />
+          </div>
           <label class="color-field">
             <span>Color</span>
             <span class="color-control">
@@ -535,7 +514,7 @@
   .edit-form {
     display: grid;
     grid-template-columns:
-      minmax(180px, 1.5fr) minmax(145px, 1fr) minmax(135px, 0.9fr)
+      minmax(180px, 1fr) minmax(300px, 1.8fr) minmax(135px, 0.7fr)
       auto;
     align-items: end;
     gap: 0.75rem;
@@ -544,6 +523,9 @@
     min-width: 0;
     display: grid;
     gap: 0.35rem;
+  }
+  .icon-field {
+    min-width: 0;
   }
   label > span:first-child {
     color: var(--text-secondary);
@@ -812,7 +794,10 @@
   @media (max-width: 900px) {
     .create-form,
     .edit-form {
-      grid-template-columns: 1.4fr 1fr 1fr;
+      grid-template-columns: 1.4fr 1fr;
+    }
+    .icon-field {
+      grid-column: 1 / -1;
     }
     .create-submit,
     .save-button {

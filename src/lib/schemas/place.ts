@@ -13,7 +13,6 @@ export const placeInputSchema = z.object({
   address: nullableText(500),
   description: nullableText(20_000),
   categoryId: uuidSchema,
-  tagIds: z.array(uuidSchema).max(50).default([]),
   status: placeStatusSchema.default('saved'),
   isFavorite: checkboxSchema,
   isArchived: checkboxSchema,

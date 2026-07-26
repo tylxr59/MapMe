@@ -12,12 +12,6 @@ export interface CategoryDTO {
   placeCount?: number;
 }
 
-export interface TagDTO {
-  id: string;
-  name: string;
-  placeCount?: number;
-}
-
 export interface AttachmentDTO {
   id: string;
   originalName: string;
@@ -39,7 +33,6 @@ export interface PlaceInput {
   address?: string | null;
   description?: string | null;
   categoryId: string;
-  tagIds: string[];
   status: PlaceStatus;
   isFavorite: boolean;
   isArchived: boolean;
@@ -56,7 +49,6 @@ export interface PlaceSummary {
   longitude: number;
   address: string | null;
   category: CategoryDTO;
-  tags: TagDTO[];
   status: PlaceStatus;
   isFavorite: boolean;
   isArchived: boolean;
@@ -89,7 +81,6 @@ export interface PlaceFilters {
   query: string;
   statuses: PlaceStatus[];
   categoryIds: string[];
-  tagIds: string[];
   visited: VisitedFilter;
   favorite: boolean | null;
   archived: boolean;

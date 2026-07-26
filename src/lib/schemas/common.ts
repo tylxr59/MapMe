@@ -59,11 +59,7 @@ export const dateSchema = z
 export function formDataObject(form: FormData): Record<string, unknown> {
   const object: Record<string, unknown> = {};
   for (const [key, value] of form.entries()) {
-    if (key === 'tagIds') continue;
     object[key] = typeof value === 'string' ? value : value.name;
   }
-  object.tagIds = form
-    .getAll('tagIds')
-    .filter((value): value is string => typeof value === 'string');
   return object;
 }

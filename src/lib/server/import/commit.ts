@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { rm } from 'node:fs/promises';
-import { normalizeName } from '$lib/schemas/common';
 import { placeInputSchema } from '$lib/schemas/place';
 import { transaction } from '$lib/server/db/transaction';
 import { insertPlace } from '$lib/server/services/places';
@@ -33,30 +32,6 @@ export async function commitStagedImport(
       ) {
         place.id = randomUUID();
       }
-      const extra = { ...(place.extraProperties ?? {}) };
-      const importedTagNames = Array.isArray(extra.importedTagNames)
-        ? extra.importedTagNames.map(String).filter(Boolean).slice(0, 50)
-        : [];
-      delete extra.importedTagNames;
-      place.extraProperties = extra;
-      const tagIds = [...place.tagIds];
-      for (const tagName of importedTagNames) {
-        const normalized = normalizeName(tagName);
-        let tag = database
-          .prepare('SELECT id FROM tags WHERE normalized_name = ?')
-          .get(normalized) as { id: string } | undefined;
-        if (!tag) {
-          tag = { id: randomUUID() };
-          const now = new Date().toISOString();
-          database
-            .prepare(
-              'INSERT INTO tags (id, name, normalized_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
-            )
-            .run(tag.id, tagName.slice(0, 80), normalized, now, now);
-        }
-        tagIds.push(tag.id);
-      }
-      place.tagIds = [...new Set(tagIds)];
       const validated = placeInputSchema.parse(place);
       insertPlace(database, validated, validated.id ?? randomUUID());
       imported++;

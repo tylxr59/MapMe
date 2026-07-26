@@ -1,6 +1,6 @@
 # MapMe
 
-MapMe is a concise, self-hosted map for places you visited, want to visit, or simply want to remember. It combines a searchable place list with Leaflet, configurable OpenStreetMap-compatible raster tiles, categories, tags, photos, portable exports, and complete backups.
+MapMe is a concise, self-hosted map for places you visited, want to visit, or simply want to remember. It combines a searchable place list with Leaflet, configurable OpenStreetMap-compatible raster tiles, customizable categories, photos, portable exports, and complete backups.
 
 MapMe is intentionally single-user. It does not include registration, collaboration, itineraries, route planning, GPS tracking, social features, or a separate API service.
 
@@ -64,13 +64,19 @@ and are intentionally excluded from MapMe backups.
 ## Import, export, and backup
 
 - GeoJSON is the canonical interchange format.
-- CSV uses a fixed header and stores tags as a JSON array.
-- KML imports point placemarks only; folders become tags and embedded HTML is converted to text.
-- GPX imports waypoints only and is tailored for OsmAnd Favorites exports; OsmAnd folders become
-  tags and imported waypoints are marked as favorites.
+- CSV uses a fixed, human-readable header.
+- KML imports point placemarks only and converts embedded HTML to text.
+- GPX imports waypoints only and is tailored for OsmAnd Favorites exports; imported waypoints are
+  marked as favorites.
 - Imports are previewed and likely duplicates are skipped unless explicitly imported as copies.
 - Complete ZIP backups contain a consistent SQLite snapshot, uploads, checksums, and a manifest.
 - Web restores are inspected, staged, and activated after one deliberate restart.
+
+## Category icons
+
+Categories can use any icon bundled with [Lucide](https://lucide.dev/icons/). The category editor
+includes a fuzzy, place-oriented search—terms such as “shooting range,” “overlanding,” and “urbex”
+find relevant options—or you can paste any Lucide icon ID directly.
 
 If the active database is too damaged to start the UI, stop the normal container and run:
 

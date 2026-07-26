@@ -83,7 +83,6 @@ export function parseKmlImport(content: string): RawImportCandidate[] {
             allowedAttributes: {}
           }),
           category: placemark.extended.category,
-          tags: [...placemark.folders, ...(placemark.extended.tags?.split(';') ?? [])],
           status: placemark.extended.status,
           rating: placemark.extended.rating,
           dateVisited: placemark.extended.dateVisited ?? placemark.extended.date_visited,

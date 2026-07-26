@@ -53,7 +53,6 @@ export function parseGeoJsonImport(content: string): RawImportCandidate[] {
       address: properties.address,
       description: properties.description,
       category: properties.categoryId ?? properties.category,
-      tags: properties.tags,
       status: properties.status,
       favorite: properties.favorite,
       archived: properties.archived,

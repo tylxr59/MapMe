@@ -26,7 +26,7 @@ describe('GeoJSON import', () => {
 });
 
 describe('CSV import', () => {
-  it('supports quoted fields and JSON tags', () => {
+  it('supports quoted fields and ignores legacy tag columns', () => {
     const [record] = parseCsvImport(
       'name,latitude,longitude,tags,description\nCafe,40.7,-73.9,"[""coffee""]","Nice, quiet"\n'
     );
@@ -36,14 +36,13 @@ describe('CSV import', () => {
 });
 
 describe('KML import', () => {
-  it('imports Point placemarks, folder tags, and strips HTML', () => {
+  it('imports Point placemarks and strips HTML', () => {
     const [record] = parseKmlImport(`<?xml version="1.0"?>
       <kml><Document><Folder><name>Weekend</name><Placemark>
       <name>Lookout</name><description><![CDATA[<b>Great</b> view]]></description>
       <Point><coordinates>-71.2,42.3,0</coordinates></Point>
       </Placemark></Folder></Document></kml>`);
     expect(record.name).toBe('Lookout');
-    expect(record.tags).toContain('Weekend');
     expect(record.description).toBe('Great view');
     expect(record.latitude).toBe('42.3');
   });
@@ -54,7 +53,7 @@ describe('KML import', () => {
 });
 
 describe('GPX import', () => {
-  it('imports OsmAnd Favorites waypoints and preserves their folder and metadata', () => {
+  it('imports OsmAnd Favorites waypoints and preserves their metadata', () => {
     const [record] = parseGpxImport(
       readFileSync(new URL('../fixtures/osmand-favorites.gpx', import.meta.url), 'utf8')
     );
@@ -64,7 +63,6 @@ describe('GPX import', () => {
     expect(record.longitude).toBe('-77.4532843');
     expect(record.address).toBe('123 Floyd Avenue');
     expect(record.description).toBe('Great view');
-    expect(record.tags).toContain('Sightseeing');
     expect(record.favorite).toBe(true);
     expect(record.status).toBe('saved');
     expect(record.extraProperties).toMatchObject({

@@ -12,7 +12,6 @@ export const filtersSchema = z.object({
   query: z.string().trim().max(200).catch(''),
   statuses: z.preprocess(splitCommaList, z.array(placeStatusSchema)).catch([]),
   categoryIds: z.preprocess(splitCommaList, z.array(z.string().uuid())).catch([]),
-  tagIds: z.preprocess(splitCommaList, z.array(z.string().uuid())).catch([]),
   visited: z.enum(['any', 'visited', 'unvisited']).catch('any'),
   favorite: z
     .enum(['true', 'false'])

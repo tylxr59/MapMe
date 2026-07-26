@@ -5,7 +5,6 @@ import { filtersSchema } from '$lib/schemas/filters';
 import { placeIdSchema, placeInputSchema } from '$lib/schemas/place';
 import { listCategories } from '$lib/server/db/queries/categories';
 import { listPlaces } from '$lib/server/db/queries/places';
-import { listTags } from '$lib/server/db/queries/tags';
 import { createPlace, deletePlace, updatePlace } from '$lib/server/services/places';
 
 export const load: PageServerLoad = ({ url }) => {
@@ -13,7 +12,6 @@ export const load: PageServerLoad = ({ url }) => {
     query: url.searchParams.get('q') ?? '',
     statuses: url.searchParams.get('statuses') ?? '',
     categoryIds: url.searchParams.get('categories') ?? '',
-    tagIds: url.searchParams.get('tags') ?? '',
     visited: url.searchParams.get('visited') ?? 'any',
     favorite: url.searchParams.get('favorite') ?? undefined,
     archived: url.searchParams.get('archived') ?? undefined,
@@ -22,7 +20,6 @@ export const load: PageServerLoad = ({ url }) => {
   });
   return {
     categories: listCategories(),
-    tags: listTags(),
     places: listPlaces(parsedFilters),
     filters: parsedFilters
   };

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { ArrowLeft, Database, Settings2, Shapes, Tags } from '@lucide/svelte';
+  import { ArrowLeft, Database, Settings2, Shapes } from '@lucide/svelte';
   let { children } = $props();
 </script>
 
@@ -18,11 +18,6 @@
         href="/manage/categories"
         aria-current={page.url.pathname.startsWith('/manage/categories') ? 'page' : undefined}
         ><Shapes size={16} /> Categories</a
-      >
-      <a
-        href="/manage/tags"
-        aria-current={page.url.pathname.startsWith('/manage/tags') ? 'page' : undefined}
-        ><Tags size={16} /> Tags</a
       >
       <a
         href="/manage/data"

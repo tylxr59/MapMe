@@ -48,20 +48,10 @@ function safeHttpUrl(value: string): string | undefined {
   }
 }
 
-function appendUnique(values: string[], value: string | undefined): void {
-  const normalized = value?.normalize('NFKC').trim();
-  if (normalized && !values.includes(normalized)) values.push(normalized);
-}
-
 function finalizeWaypoint(waypoint: GpxWaypoint): RawImportCandidate {
   const warnings = [...waypoint.warnings];
   const fallbackName = `Waypoint ${waypoint.index}`;
   if (!waypoint.name) warnings.push(`Waypoint had no name and was named "${fallbackName}".`);
-
-  const tags: string[] = [];
-  appendUnique(tags, waypoint.type);
-  appendUnique(tags, waypoint.extensions['osmand.category']);
-  appendUnique(tags, waypoint.extensions['osmand.group']);
 
   const extensionAddress =
     waypoint.extensions['osmand.address'] ?? waypoint.extensions['gpx.extension.address'] ?? '';
@@ -95,7 +85,6 @@ function finalizeWaypoint(waypoint: GpxWaypoint): RawImportCandidate {
     longitude: waypoint.longitude,
     address: plainText(waypoint.address || extensionAddress),
     description: plainText(waypoint.description || waypoint.comment || extensionDescription),
-    tags,
     status: 'saved',
     favorite: true,
     sourceUrl,

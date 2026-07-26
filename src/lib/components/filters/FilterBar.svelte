@@ -1,11 +1,7 @@
 <script lang="ts">
   import { Search, SlidersHorizontal, X } from '@lucide/svelte';
-  import type { CategoryDTO, PlaceFilters, TagDTO } from '$lib/types';
-  let {
-    filters,
-    categories,
-    tags
-  }: { filters: PlaceFilters; categories: CategoryDTO[]; tags: TagDTO[] } = $props();
+  import type { CategoryDTO, PlaceFilters } from '$lib/types';
+  let { filters, categories }: { filters: PlaceFilters; categories: CategoryDTO[] } = $props();
   let expanded = $state(false);
 </script>
 
@@ -48,15 +44,6 @@
             <option value={category.id} selected={filters.categoryIds.includes(category.id)}
               >{category.name}</option
             >
-          {/each}
-        </select>
-      </label>
-      <label
-        >Tag
-        <select name="tags">
-          <option value="">Any tag</option>
-          {#each tags as tag}
-            <option value={tag.id} selected={filters.tagIds.includes(tag.id)}>{tag.name}</option>
           {/each}
         </select>
       </label>

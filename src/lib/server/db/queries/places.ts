@@ -4,7 +4,6 @@ import { getDatabase } from '../driver';
 import { attachmentsForPlace } from './attachments';
 import { mapCategory } from './categories';
 import { safeFtsQuery } from './search';
-import { tagsForPlaces } from './tags';
 
 interface PlaceRow {
   id: string;
@@ -31,7 +30,7 @@ interface PlaceRow {
   attachment_count: number;
 }
 
-function mapSummary(row: PlaceRow, tags: ReturnType<typeof tagsForPlaces>): PlaceSummary {
+function mapSummary(row: PlaceRow): PlaceSummary {
   return {
     id: row.id,
     name: row.name,
@@ -46,7 +45,6 @@ function mapSummary(row: PlaceRow, tags: ReturnType<typeof tagsForPlaces>): Plac
       sort_order: row.sort_order,
       is_system: row.is_system
     }),
-    tags: tags.get(row.id) ?? [],
     status: row.status,
     isFavorite: row.is_favorite === 1,
     isArchived: row.is_archived === 1,
@@ -89,17 +87,6 @@ export function listPlaces(
     where.push(`p.category_id IN (${filters.categoryIds.map(() => '?').join(',')})`);
     values.push(...filters.categoryIds);
   }
-  if (filters.tagIds.length > 0) {
-    where.push(
-      `p.id IN (
-        SELECT place_id FROM place_tags
-        WHERE tag_id IN (${filters.tagIds.map(() => '?').join(',')})
-        GROUP BY place_id
-        HAVING count(DISTINCT tag_id) = ?
-      )`
-    );
-    values.push(...filters.tagIds, filters.tagIds.length);
-  }
   if (filters.visited === 'visited')
     where.push("(p.status = 'visited' OR p.date_visited IS NOT NULL)");
   if (filters.visited === 'unvisited')
@@ -127,11 +114,7 @@ export function listPlaces(
     ORDER BY ${sortSql}
     LIMIT 10000`;
   const rows = database.prepare(sql).all(...values) as unknown as PlaceRow[];
-  const tags = tagsForPlaces(
-    rows.map((row) => row.id),
-    database
-  );
-  return rows.map((row) => mapSummary(row, tags));
+  return rows.map(mapSummary);
 }
 
 export function getPlace(id: string, database: DatabaseSync = getDatabase()): PlaceDetail | null {
@@ -146,7 +129,7 @@ export function getPlace(id: string, database: DatabaseSync = getDatabase()): Pl
     )
     .get(id) as PlaceRow | undefined;
   if (!row) return null;
-  const summary = mapSummary(row, tagsForPlaces([id], database));
+  const summary = mapSummary(row);
   let extraProperties: Record<string, unknown>;
   try {
     extraProperties = JSON.parse(row.extra_properties_json ?? '{}') as Record<string, unknown>;
