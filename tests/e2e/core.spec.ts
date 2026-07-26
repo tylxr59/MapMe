@@ -131,6 +131,31 @@ test('adds a place with direct coordinates and copies them from its details', as
   await page.getByLabel('Name').fill(secondEdit);
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('heading', { name: secondEdit })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close details' }).click();
+  await page.getByTitle('Zoom out').click();
+  await page.getByTitle('Zoom out').click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const saved = localStorage.getItem('mapme.viewport');
+        return saved ? JSON.parse(saved).zoom : null;
+      })
+    )
+    .toBeLessThan(15);
+
+  await page.locator('.place-row').filter({ hasText: secondEdit }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const saved = localStorage.getItem('mapme.viewport');
+        return saved ? JSON.parse(saved) : null;
+      })
+    )
+    .toMatchObject({
+      center: [42.3601, -71.0589],
+      zoom: 15
+    });
   expect(browserErrors).toEqual([]);
 });
 

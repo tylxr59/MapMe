@@ -99,14 +99,64 @@ describe('database and place CRUD', () => {
     expect(getPlace(created.id)).toBeNull();
   });
 
-  it('reorders every category as one atomic list', async () => {
+  it('keeps favorites at the top of the places list for every sort', async () => {
+    const { createPlace, deletePlace } = await import('$lib/server/services/places');
+    const { listPlaces } = await import('$lib/server/db/queries/places');
+    const base = {
+      latitude: 40.7,
+      longitude: -73.9,
+      address: null,
+      description: null,
+      categoryId: '00000000-0000-4000-8000-000000000003',
+      status: 'saved' as const,
+      isArchived: false,
+      dateVisited: null,
+      sourceUrl: null,
+      extraProperties: {}
+    };
+    const favorite = createPlace({
+      ...base,
+      name: 'Zulu Favorite',
+      isFavorite: true,
+      rating: 1
+    });
+    const regular = createPlace({
+      ...base,
+      name: 'Alpha Regular',
+      isFavorite: false,
+      rating: 5
+    });
+    const filters = {
+      query: '',
+      statuses: [],
+      categoryIds: [],
+      visited: 'any' as const,
+      favorite: null,
+      archived: false,
+      ratingMin: null
+    };
+
+    for (const sort of ['updated_desc', 'name_asc', 'rating_desc', 'visited_desc'] as const) {
+      expect(listPlaces({ ...filters, sort }).map((place) => place.id)).toEqual([
+        favorite.id,
+        regular.id
+      ]);
+    }
+
+    await deletePlace(favorite.id);
+    await deletePlace(regular.id);
+  });
+
+  it('reorders categories atomically while keeping Other last', async () => {
     const { listCategories } = await import('$lib/server/db/queries/categories');
     const { reorderCategories } = await import('$lib/server/services/categories');
     const original = listCategories();
     const reversedIds = original.map((category) => category.id).reverse();
+    const systemId = original.find((category) => category.isSystem)?.id;
+    const expectedIds = [...reversedIds.filter((id) => id !== systemId), systemId!];
 
     reorderCategories(reversedIds);
-    expect(listCategories().map((category) => category.id)).toEqual(reversedIds);
+    expect(listCategories().map((category) => category.id)).toEqual(expectedIds);
     expect(() => reorderCategories(reversedIds.slice(1))).toThrow('Category order is incomplete');
 
     reorderCategories(original.map((category) => category.id));

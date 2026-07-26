@@ -29,6 +29,7 @@
   let cluster: import('leaflet').MarkerClusterGroup | null = null;
   let draftMarker: import('leaflet').Marker | null = null;
   let leaflet: typeof import('leaflet') | null = null;
+  const placeFocusZoom = 15;
 
   function saveViewport() {
     if (!map) return;
@@ -82,7 +83,11 @@
       marker.on('click', () => onselect(place.id));
       cluster.addLayer(marker);
       if (place.id === selectedId) {
-        queueMicrotask(() => map?.panTo([place.latitude, place.longitude]));
+        queueMicrotask(() =>
+          map?.setView([place.latitude, place.longitude], Math.min(placeFocusZoom, tileMaxZoom), {
+            animate: true
+          })
+        );
       }
     }
   }

@@ -111,7 +111,7 @@ export function listPlaces(
 
   const sql = `${summarySelect}
     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-    ORDER BY ${sortSql}
+    ORDER BY p.is_favorite DESC, ${sortSql}
     LIMIT 10000`;
   const rows = database.prepare(sql).all(...values) as unknown as PlaceRow[];
   return rows.map(mapSummary);

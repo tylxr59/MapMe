@@ -71,20 +71,27 @@ export function deleteCategory(id: string, replacementId: string): void {
 
 export function reorderCategories(ids: string[]): void {
   transaction((database) => {
-    const existing = database
-      .prepare('SELECT id FROM categories')
-      .all()
-      .map((row) => (row as { id: string }).id);
+    const categories = database
+      .prepare('SELECT id, is_system FROM categories')
+      .all() as unknown as Array<{ id: string; is_system: number }>;
+    const existing = categories.map((category) => category.id);
     if (ids.length !== existing.length || new Set(ids).size !== existing.length) {
       throw new Error('Category order is incomplete');
     }
     const existingIds = new Set(existing);
     if (ids.some((id) => !existingIds.has(id))) throw new Error('Unknown category');
 
+    const systemIds = new Set(
+      categories.filter((category) => category.is_system === 1).map((category) => category.id)
+    );
+    const canonicalIds = [
+      ...ids.filter((id) => !systemIds.has(id)),
+      ...ids.filter((id) => systemIds.has(id))
+    ];
     const update = database.prepare(
       'UPDATE categories SET sort_order = ?, updated_at = ? WHERE id = ?'
     );
     const now = new Date().toISOString();
-    ids.forEach((id, index) => update.run(index * 10, now, id));
+    canonicalIds.forEach((id, index) => update.run(index * 10, now, id));
   });
 }

@@ -37,6 +37,10 @@
   const categoryIcon = (id: string, fallback: string) => draftIcons[id] ?? fallback;
   const categoryColor = (id: string, fallback: string) => draftColors[id] ?? fallback;
   const placeLabel = (count: number) => `${count} ${count === 1 ? 'place' : 'places'}`;
+  const withSystemCategoryLast = (categories: typeof data.categories) => [
+    ...categories.filter((category) => !category.isSystem),
+    ...categories.filter((category) => category.isSystem)
+  ];
   const totalPlaces = () =>
     data.categories.reduce(
       (total: number, category: (typeof data.categories)[number]) =>
@@ -57,7 +61,7 @@
     );
     if (signature !== serverCategorySignature && !draggedId && !savingOrder) {
       serverCategorySignature = signature;
-      orderedCategories = [...data.categories];
+      orderedCategories = withSystemCategoryLast(data.categories);
     }
   });
 
@@ -86,11 +90,12 @@
     const [dragged] = next.splice(sourceIndex, 1);
     if (sourceIndex < destinationIndex) destinationIndex -= 1;
     next.splice(destinationIndex, 0, dragged);
-    orderedCategories = next;
+    orderedCategories = withSystemCategoryLast(next);
   }
 
   function startDragging(event: DragEvent, id: string) {
-    if (savingOrder) {
+    const category = orderedCategories.find((item) => item.id === id);
+    if (savingOrder || category?.isSystem) {
       event.preventDefault();
       return;
     }
@@ -129,6 +134,7 @@
     const currentIndex = orderedCategories.findIndex((category) => category.id === id);
     const nextIndex = currentIndex + (event.key === 'ArrowUp' ? -1 : 1);
     if (currentIndex < 0 || nextIndex < 0 || nextIndex >= orderedCategories.length) return;
+    if (orderedCategories[currentIndex].isSystem || orderedCategories[nextIndex].isSystem) return;
     const previousOrder = [...orderedCategories];
     const next = [...orderedCategories];
     [next[currentIndex], next[nextIndex]] = [next[nextIndex], next[currentIndex]];
@@ -249,12 +255,16 @@
     >
       <summary>
         <span
+          class:locked={category.isSystem}
           class="drag-handle"
-          draggable={!savingOrder}
+          draggable={!savingOrder && !category.isSystem}
           role="button"
-          tabindex="0"
-          aria-label={`Drag to reorder ${category.name}. Use arrow keys to move it.`}
-          title="Drag to reorder"
+          tabindex={category.isSystem ? -1 : 0}
+          aria-disabled={category.isSystem || savingOrder}
+          aria-label={category.isSystem
+            ? `${category.name} always stays last`
+            : `Drag to reorder ${category.name}. Use arrow keys to move it.`}
+          title={category.isSystem ? 'Always last' : 'Drag to reorder'}
           ondragstart={(event) => startDragging(event, category.id)}
           ondragend={finishDragging}
           onkeydown={(event) => moveWithKeyboard(event, category.id)}
@@ -658,6 +668,14 @@
   }
   .drag-handle:active {
     cursor: grabbing;
+  }
+  .drag-handle.locked {
+    cursor: default;
+    opacity: 0.45;
+  }
+  .drag-handle.locked:hover {
+    background: transparent;
+    color: var(--ink-muted);
   }
   .category-name {
     display: flex;
