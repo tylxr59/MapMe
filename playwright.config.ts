@@ -10,9 +10,9 @@ export default defineConfig({
     trace: 'on-first-retry'
   },
   webServer: {
-    command: 'npm run build && node scripts/startup.mjs',
+    command: 'node scripts/reset-e2e-data.mjs && npm run build && node scripts/startup.mjs',
     url: 'http://127.0.0.1:4173/healthz',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     env: {
       ...process.env,
       HOST: '127.0.0.1',

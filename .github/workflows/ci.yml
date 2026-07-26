@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      ORIGIN: http://127.0.0.1:4173
-      AUTH_MODE: none
       DATABASE_PATH: /tmp/mapme-ci/database.sqlite
       UPLOAD_PATH: /tmp/mapme-ci/uploads
       BACKUP_PATH: /tmp/mapme-ci/backups
@@ -43,7 +41,6 @@ jobs:
         run: |
           mkdir -p "${RUNNER_TEMP}/mapme-ci-data"
           docker run -d --name mapme-ci \
-            -e ORIGIN=http://127.0.0.1:3000 \
             -p 3000:3000 \
             -v "${RUNNER_TEMP}/mapme-ci-data:/data" \
             mapme:ci
@@ -62,3 +59,4 @@ jobs:
             sleep 2
           done
           curl --fail http://127.0.0.1:3000/healthz
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/)" = 303
