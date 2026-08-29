@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM node:24.18.0-bookworm-slim AS dependencies
+FROM node:26.8.1-bookworm-slim AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci --include=optional
@@ -9,7 +9,7 @@ COPY . .
 RUN npm run check && npm run build
 RUN npm prune --omit=dev
 
-FROM node:24.18.0-bookworm-slim AS runtime
+FROM node:26.8.1-bookworm-slim AS runtime
 LABEL org.opencontainers.image.source="https://github.com/tylxr59/MapMe" \
       org.opencontainers.image.description="A concise self-hosted map for saving interesting places" \
       org.opencontainers.image.licenses="MIT"
