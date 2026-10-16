@@ -16,7 +16,7 @@ export interface StagedUpload {
   bytes: number;
 }
 
-function safeOriginalName(value: string): string {
+function safeOriginalName(value = ''): string {
   const name = value
     .split(/[\\/]/)
     .at(-1)!

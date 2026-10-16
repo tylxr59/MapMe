@@ -451,6 +451,34 @@ describe('database and place CRUD', () => {
     }
   });
 
+  it('uses a fallback name for photo uploads without a filename', async () => {
+    const { streamSinglePhoto } = await import('$lib/server/storage/uploads');
+    const boundary = 'mapme-photo-boundary';
+    const body = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="photo"',
+      'Content-Type: application/octet-stream',
+      '',
+      'photo bytes',
+      `--${boundary}--`,
+      ''
+    ].join('\r\n');
+    const upload = await streamSinglePhoto(
+      new Request('http://localhost/api/places/id/attachments', {
+        method: 'POST',
+        headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
+        body
+      })
+    );
+    try {
+      expect(upload.originalName).toBe('photo');
+      expect(readFileSync(upload.path, 'utf8')).toBe('photo bytes');
+      expect(upload.bytes).toBe(11);
+    } finally {
+      await rm(upload.path, { force: true });
+    }
+  });
+
   it('enforces photo upload byte limits while streaming', async () => {
     const { privateConfig } = await import('$lib/server/config/private');
     const { streamSinglePhoto } = await import('$lib/server/storage/uploads');
