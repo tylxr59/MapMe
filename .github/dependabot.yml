@@ -7,6 +7,19 @@ updates:
     groups:
       npm:
         patterns: ['*']
+        update-types: [minor, patch]
+    ignore:
+      # SvelteKit 3 / adapter-node 6 require an origin-handling migration.
+      - dependency-name: '@sveltejs/kit'
+        versions: ['>=3']
+      - dependency-name: '@sveltejs/adapter-node'
+        versions: ['>=6']
+      # svelte-check and typescript-eslint do not support TypeScript 7 yet.
+      - dependency-name: typescript
+        versions: ['>=7']
+      # Match the Node 24 runtime declared in package.json and Dockerfile.
+      - dependency-name: '@types/node'
+        versions: ['>=25']
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -15,3 +28,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Runtime major upgrades require coordinated engine and CI changes.
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
