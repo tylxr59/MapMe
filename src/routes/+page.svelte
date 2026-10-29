@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation';
+  import { refreshAll } from '$app/navigation';
   import {
     LoaderCircle,
     LogOut,
@@ -9,13 +9,13 @@
     Plus,
     Settings2
   } from '@lucide/svelte';
-  import BrandMark from '$lib/components/brand/BrandMark.svelte';
-  import FilterBar from '$lib/components/filters/FilterBar.svelte';
-  import PlaceMap from '$lib/components/map/PlaceMap.svelte';
-  import PlaceDetails from '$lib/components/places/PlaceDetails.svelte';
-  import PlaceEditor from '$lib/components/places/PlaceEditor.svelte';
-  import PlaceList from '$lib/components/places/PlaceList.svelte';
-  import type { MapPlace, PlaceDetail } from '$lib/types';
+  import BrandMark from '#lib/components/brand/BrandMark.svelte';
+  import FilterBar from '#lib/components/filters/FilterBar.svelte';
+  import PlaceMap from '#lib/components/map/PlaceMap.svelte';
+  import PlaceDetails from '#lib/components/places/PlaceDetails.svelte';
+  import PlaceEditor from '#lib/components/places/PlaceEditor.svelte';
+  import PlaceList from '#lib/components/places/PlaceList.svelte';
+  import type { MapPlace, PlaceDetail } from '#lib/types/index.js';
   import { onDestroy } from 'svelte';
 
   let { data, form } = $props();
@@ -141,20 +141,20 @@
     editorOpen = false;
     editing = false;
     draft = null;
-    await invalidateAll();
+    await refreshAll();
     await selectPlace(placeId);
   }
 
   async function deleted() {
     selectedId = null;
     selectedPlace = null;
-    await invalidateAll();
+    await refreshAll();
   }
 
   async function changed() {
     if (!selectedPlace) return;
     const placeId = selectedPlace.id;
-    await invalidateAll();
+    await refreshAll();
     await selectPlace(placeId);
   }
 

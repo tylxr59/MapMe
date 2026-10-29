@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getAppConfig } from '$lib/server/config/app';
+import { getAppConfig } from '#lib/server/config/app.js';
 
 export function assertSameOrigin(request: Request): void {
   const origin = request.headers.get('origin');

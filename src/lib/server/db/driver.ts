@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { chmod, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { privateConfig } from '$lib/server/config/private';
+import { privateConfig } from '#lib/server/config/private.js';
 import { migrateDatabase } from './migrate';
 
 let database: DatabaseSync | null = null;

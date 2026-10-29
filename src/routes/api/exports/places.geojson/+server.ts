@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { exportGeoJson } from '$lib/server/export/geojson';
+import { exportGeoJson } from '#lib/server/export/geojson.js';
 
 export const GET: RequestHandler = () =>
   new Response(exportGeoJson(), {

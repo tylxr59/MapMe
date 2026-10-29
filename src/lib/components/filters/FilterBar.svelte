@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Archive, Heart, Search, SlidersHorizontal, Star, X } from '@lucide/svelte';
-  import type { CategoryDTO, PlaceFilters, PlaceListDTO } from '$lib/types';
+  import type { CategoryDTO, PlaceFilters, PlaceListDTO } from '#lib/types/index.js';
   let {
     filters,
     categories,
@@ -63,7 +63,7 @@
 </script>
 
 <div class="filters">
-  <form method="GET" class="search" data-sveltekit-keepfocus data-sveltekit-noscroll>
+  <form method="GET" class="search" data-sveltekit-reset="false">
     <Search size={17} />
     <input
       name="q"
@@ -95,7 +95,7 @@
         class="clear-query"
         href={href({ query: '' })}
         aria-label="Clear search"
-        data-sveltekit-noscroll><X size={15} /></a
+        data-sveltekit-reset="false"><X size={15} /></a
       >
     {/if}
     <button
@@ -117,13 +117,13 @@
       class="chip"
       href={href({ listIds: [], favorite: false })}
       aria-current={!filters.listIds.length && filters.favorite !== true ? 'true' : undefined}
-      data-sveltekit-noscroll>All</a
+      data-sveltekit-reset="false">All</a
     >
     <a
       class="chip favorite"
       href={href({ favorite: filters.favorite !== true })}
       aria-current={filters.favorite === true ? 'true' : undefined}
-      data-sveltekit-noscroll
+      data-sveltekit-reset="false"
       ><Heart size={13} fill={filters.favorite === true ? 'currentColor' : 'none'} /> Favorites</a
     >
     {#each lists as list (list.id)}
@@ -132,7 +132,7 @@
         class="chip"
         href={href({ listIds: active ? [] : [list.id] })}
         aria-current={active ? 'true' : undefined}
-        data-sveltekit-noscroll>{list.name}</a
+        data-sveltekit-reset="false">{list.name}</a
       >
     {/each}
   </nav>
@@ -149,7 +149,7 @@
               href={toggleCategory(category.id)}
               aria-current={active ? 'true' : undefined}
               style:--category={category.color}
-              data-sveltekit-noscroll
+              data-sveltekit-reset="false"
             >
               <span class="glyph">{@html category.iconSvg}</span>{category.name}
             </a>
@@ -163,7 +163,7 @@
             <a
               href={href({ ratingMin: value })}
               aria-current={filters.ratingMin === value ? 'true' : undefined}
-              data-sveltekit-noscroll
+              data-sveltekit-reset="false"
             >
               {#if value === null}Any{:else}{value}{#if value < 5}+{/if}<Star
                   size={11}
@@ -179,11 +179,11 @@
           class="chip"
           href={href({ archived: !filters.archived })}
           aria-current={filters.archived ? 'true' : undefined}
-          data-sveltekit-noscroll><Archive size={13} /> Archived only</a
+          data-sveltekit-reset="false"><Archive size={13} /> Archived only</a
         >
       </div>
       {#if anyActive}
-        <a class="reset" href="/" data-sveltekit-noscroll><X size={14} /> Clear all filters</a>
+        <a class="reset" href="/" data-sveltekit-reset="false"><X size={14} /> Clear all filters</a>
       {/if}
     </div>
   {/if}

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { originOnlyReferer, parseTileCoordinates, TileCache } from '$lib/server/tiles/cache';
+import { originOnlyReferer, parseTileCoordinates, TileCache } from '#lib/server/tiles/cache.js';
 
 const temporaryDirectories: string[] = [];
 

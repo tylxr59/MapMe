@@ -6,7 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { rm } from 'node:fs/promises';
-import { privateConfig } from '$lib/server/config/private';
+import { privateConfig } from '#lib/server/config/private.js';
 import { storagePaths } from './paths';
 
 export interface StagedUpload {

@@ -6,8 +6,8 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { pipeline } from 'node:stream/promises';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
-import { privateConfig } from '$lib/server/config/private';
-import { storagePaths } from '$lib/server/storage/paths';
+import { privateConfig } from '#lib/server/config/private.js';
+import { storagePaths } from '#lib/server/storage/paths.js';
 
 export interface StagedRestoreUpload {
   path: string;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Archive, Camera, Heart, Star } from '@lucide/svelte';
-  import type { PlaceSummary } from '$lib/types';
+  import type { PlaceSummary } from '#lib/types/index.js';
 
   let {
     place,

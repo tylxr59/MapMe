@@ -19,7 +19,7 @@
     X
   } from '@lucide/svelte';
   import { onDestroy } from 'svelte';
-  import type { PlaceDetail } from '$lib/types';
+  import type { PlaceDetail } from '#lib/types/index.js';
 
   let {
     place,

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { getDatabase } from '$lib/server/db/driver';
-import { privateConfig } from '$lib/server/config/private';
+import { getDatabase } from '#lib/server/db/driver.js';
+import { privateConfig } from '#lib/server/config/private.js';
 import type { GeocodingResult } from './provider';
 
 function endpointFingerprint(): string {

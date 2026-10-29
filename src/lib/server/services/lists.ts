@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { normalizeName } from '$lib/schemas/common';
+import { normalizeName } from '#lib/schemas/common.js';
 import type { z } from 'zod';
-import type { listSchema } from '$lib/schemas/list';
-import { transaction } from '$lib/server/db/transaction';
-import { listPlaceLists } from '$lib/server/db/queries/lists';
+import type { listSchema } from '#lib/schemas/list.js';
+import { transaction } from '#lib/server/db/transaction.js';
+import { listPlaceLists } from '#lib/server/db/queries/lists.js';
 
 type ListInput = z.infer<typeof listSchema>;
 

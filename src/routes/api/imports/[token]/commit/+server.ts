@@ -1,7 +1,7 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
 import { z } from 'zod';
-import { assertSameOrigin } from '$lib/server/security/origin';
-import { commitStagedImport } from '$lib/server/import/commit';
+import { assertSameOrigin } from '#lib/server/security/origin.js';
+import { commitStagedImport } from '#lib/server/import/commit.js';
 
 const selectionSchema = z.object({
   include: z.array(z.number().int().min(0)).max(10_000),

@@ -1,9 +1,9 @@
 import { access } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import type { RequestHandler } from './$types';
-import { databaseHealth } from '$lib/server/db/driver';
-import { storagePaths } from '$lib/server/storage/paths';
-import { appVersion } from '$lib/server/config/public';
+import { databaseHealth } from '#lib/server/db/driver.js';
+import { storagePaths } from '#lib/server/storage/paths.js';
+import { appVersion } from '#lib/server/config/public.js';
 
 export const GET: RequestHandler = async () => {
   try {

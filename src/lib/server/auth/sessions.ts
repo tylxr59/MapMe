@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { getDatabase } from '$lib/server/db/driver';
-import { privateConfig } from '$lib/server/config/private';
+import { getDatabase } from '#lib/server/db/driver.js';
+import { privateConfig } from '#lib/server/config/private.js';
 
 export const SESSION_COOKIE = 'mapme_session';
 const SESSION_TOUCH_INTERVAL_MS = 15 * 60 * 1000;

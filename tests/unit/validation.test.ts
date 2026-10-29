@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { placeInputSchema } from '$lib/schemas/place';
-import { filtersSchema } from '$lib/schemas/filters';
-import { safeFtsQuery } from '$lib/server/db/queries/search';
-import { safeLocalRedirect } from '$lib/server/security/redirect';
+import { placeInputSchema } from '#lib/schemas/place.js';
+import { filtersSchema } from '#lib/schemas/filters.js';
+import { safeFtsQuery } from '#lib/server/db/queries/search.js';
+import { safeLocalRedirect } from '#lib/server/security/redirect.js';
 import {
   categoryIconSvg,
   isValidCategoryIcon,
   searchCategoryIcons
-} from '$lib/icons/category-icons';
-import { safeStoragePath } from '$lib/server/storage/paths';
+} from '#lib/icons/category-icons.js';
+import { safeStoragePath } from '#lib/server/storage/paths.js';
 
 const validPlace = {
   name: 'A place',

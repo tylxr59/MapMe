@@ -3,14 +3,14 @@ import { readFile } from 'node:fs/promises';
 import { rename, rm } from 'node:fs/promises';
 import { fileTypeFromFile } from 'file-type';
 import sharp from 'sharp';
-import type { AttachmentDTO } from '$lib/types';
-import { getDatabase } from '$lib/server/db/driver';
-import { transaction } from '$lib/server/db/transaction';
-import { mapAttachment, type AttachmentRow } from '$lib/server/db/queries/attachments';
-import { privateConfig } from '$lib/server/config/private';
+import type { AttachmentDTO } from '#lib/types/index.js';
+import { getDatabase } from '#lib/server/db/driver.js';
+import { transaction } from '#lib/server/db/transaction.js';
+import { mapAttachment, type AttachmentRow } from '#lib/server/db/queries/attachments.js';
+import { privateConfig } from '#lib/server/config/private.js';
 import { safeStoragePath, storagePaths } from './paths';
 import type { StagedUpload } from './uploads';
-import { mutationLock } from '$lib/server/mutation-lock';
+import { mutationLock } from '#lib/server/mutation-lock.js';
 
 const acceptedTypes = new Map([
   ['image/jpeg', 'jpg'],

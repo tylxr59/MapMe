@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { rm } from 'node:fs/promises';
-import { placeInputSchema } from '$lib/schemas/place';
-import { transaction } from '$lib/server/db/transaction';
-import { insertPlace } from '$lib/server/services/places';
+import { placeInputSchema } from '#lib/schemas/place.js';
+import { transaction } from '#lib/server/db/transaction.js';
+import { insertPlace } from '#lib/server/services/places.js';
 import { buildImportPreview, readStagedImport } from './common';
 
 export interface ImportSelection {

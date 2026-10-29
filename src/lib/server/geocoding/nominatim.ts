@@ -1,5 +1,5 @@
 import packageJson from '../../../../package.json';
-import { privateConfig } from '$lib/server/config/private';
+import { privateConfig } from '#lib/server/config/private.js';
 import { cacheGeocoding, getCachedGeocoding } from './cache';
 import type { GeocodingProvider, GeocodingResult } from './provider';
 

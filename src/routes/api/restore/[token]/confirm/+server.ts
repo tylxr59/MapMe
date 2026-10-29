@@ -1,6 +1,6 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
-import { assertSameOrigin } from '$lib/server/security/origin';
-import { confirmRestore } from '$lib/server/backup/restore';
+import { assertSameOrigin } from '#lib/server/security/origin.js';
+import { confirmRestore } from '#lib/server/backup/restore.js';
 
 export const POST: RequestHandler = async ({ params, request }) => {
   assertSameOrigin(request);

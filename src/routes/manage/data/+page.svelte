@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation';
+  import { refreshAll } from '$app/navigation';
   import {
     ArchiveRestore,
     DatabaseBackup,
@@ -10,7 +10,7 @@
     Trash2,
     Upload
   } from '@lucide/svelte';
-  import type { BackupManifest, ImportPreview } from '$lib/types';
+  import type { BackupManifest, ImportPreview } from '#lib/types/index.js';
 
   let { data } = $props();
   let importFile: HTMLInputElement;
@@ -109,7 +109,7 @@
         error?: string;
       }>(response, 'Backup failed');
       backupMessage = `Created ${result.backup.filename}`;
-      await invalidateAll();
+      await refreshAll();
     } catch (error) {
       backupMessage = error instanceof Error ? error.message : 'Backup failed';
     } finally {
@@ -120,7 +120,7 @@
   async function deleteBackup(id: string) {
     if (!confirm(`Delete backup ${id}?`)) return;
     const response = await fetch(`/api/backups/${encodeURIComponent(id)}`, { method: 'DELETE' });
-    if (response.ok) await invalidateAll();
+    if (response.ok) await refreshAll();
   }
 
   async function inspectRestore() {

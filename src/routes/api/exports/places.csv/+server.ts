@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { exportCsv } from '$lib/server/export/csv';
+import { exportCsv } from '#lib/server/export/csv.js';
 
 export const GET: RequestHandler = () =>
   new Response(exportCsv(), {

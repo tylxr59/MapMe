@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appConfigSchema, requestOrigin } from '$lib/server/config/app';
+import { appConfigSchema, requestOrigin } from '#lib/server/config/app.js';
 
 describe('application configuration', () => {
   it('uses standard Nginx Proxy Manager forwarding headers for the suggested origin', () => {

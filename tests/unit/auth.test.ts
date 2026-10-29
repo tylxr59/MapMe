@@ -4,8 +4,8 @@ import {
   loginClientKey,
   loginRateLimit,
   recordLoginFailure
-} from '$lib/server/auth/rate-limit';
-import { proxyIdentity } from '$lib/server/auth/proxy';
+} from '#lib/server/auth/rate-limit.js';
+import { proxyIdentity } from '#lib/server/auth/proxy.js';
 
 afterEach(() => {
   vi.useRealTimers();

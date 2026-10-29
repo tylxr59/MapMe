@@ -1,6 +1,6 @@
 <script lang="ts">
   import { MapPinOff } from '@lucide/svelte';
-  import type { PlaceSummary } from '$lib/types';
+  import type { PlaceSummary } from '#lib/types/index.js';
   import PlaceListItem from './PlaceListItem.svelte';
 
   let {

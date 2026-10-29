@@ -17,7 +17,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import('$lib/server/db/driver');
+  const { closeDatabase } = await import('#lib/server/db/driver.js');
   closeDatabase();
   rmSync(directory, { recursive: true, force: true });
 });
@@ -27,8 +27,8 @@ describe('database and place CRUD', () => {
   const wantToGoListId = '00000000-0000-4000-8000-000000000102';
 
   it('applies the current schema with WAL, FTS5, and seeds', async () => {
-    const { initializeStorage } = await import('$lib/server/storage/paths');
-    const { getDatabase } = await import('$lib/server/db/driver');
+    const { initializeStorage } = await import('#lib/server/storage/paths.js');
+    const { getDatabase } = await import('#lib/server/db/driver.js');
     await initializeStorage();
     const database = getDatabase();
     const version = database
@@ -57,14 +57,14 @@ describe('database and place CRUD', () => {
   });
 
   it('imports v1.0 environment settings into persistent application configuration', async () => {
-    const { getAppConfig } = await import('$lib/server/config/app');
+    const { getAppConfig } = await import('#lib/server/config/app.js');
     const config = getAppConfig();
     expect(config).toMatchObject({
       version: 1,
       origin: 'http://localhost:3000',
       authMode: 'none'
     });
-    const { getDatabase } = await import('$lib/server/db/driver');
+    const { getDatabase } = await import('#lib/server/db/driver.js');
     const row = getDatabase()
       .prepare("SELECT value_json FROM settings WHERE key = 'app_configuration'")
       .get() as { value_json: string };
@@ -117,7 +117,7 @@ describe('database and place CRUD', () => {
         new Date().toISOString()
       );
 
-    const { migrateDatabase } = await import('$lib/server/db/migrate');
+    const { migrateDatabase } = await import('#lib/server/db/migrate.js');
     migrateDatabase(database);
     const migrated = database
       .prepare(
@@ -139,8 +139,8 @@ describe('database and place CRUD', () => {
   });
 
   it('creates, renames, and deletes custom lists', async () => {
-    const { savePlaceList, deletePlaceList } = await import('$lib/server/services/lists');
-    const { listPlaceLists } = await import('$lib/server/db/queries/lists');
+    const { savePlaceList, deletePlaceList } = await import('#lib/server/services/lists.js');
+    const { listPlaceLists } = await import('#lib/server/db/queries/lists.js');
     const created = savePlaceList({ name: 'Honeymoon options', sortOrder: 40 });
     expect(listPlaceLists().some((list) => list.name === 'Honeymoon options')).toBe(true);
     savePlaceList({ id: created.id, name: 'Anniversary options', sortOrder: 40 });
@@ -150,8 +150,9 @@ describe('database and place CRUD', () => {
   });
 
   it('creates, searches, updates, and deletes a place', async () => {
-    const { createPlace, updatePlace, deletePlace } = await import('$lib/server/services/places');
-    const { getPlace, listPlaces } = await import('$lib/server/db/queries/places');
+    const { createPlace, updatePlace, deletePlace } =
+      await import('#lib/server/services/places.js');
+    const { getPlace, listPlaces } = await import('#lib/server/db/queries/places.js');
     const base = {
       name: 'Quiet Coffee',
       latitude: 40.7,
@@ -180,7 +181,7 @@ describe('database and place CRUD', () => {
     };
     expect(listPlaces(filters)).toHaveLength(1);
     updatePlace(created.id, { ...base, name: 'Quiet Cafe' });
-    const { setPlaceFavorite } = await import('$lib/server/services/places');
+    const { setPlaceFavorite } = await import('#lib/server/services/places.js');
     setPlaceFavorite(created.id, true);
     expect(getPlace(created.id)?.isFavorite).toBe(true);
     updatePlace(created.id, {
@@ -202,8 +203,8 @@ describe('database and place CRUD', () => {
   });
 
   it('orders places by favorite, rating, then name', async () => {
-    const { createPlace, deletePlace } = await import('$lib/server/services/places');
-    const { listPlaces } = await import('$lib/server/db/queries/places');
+    const { createPlace, deletePlace } = await import('#lib/server/services/places.js');
+    const { listPlaces } = await import('#lib/server/db/queries/places.js');
     const base = {
       latitude: 40.7,
       longitude: -73.9,
@@ -275,7 +276,7 @@ describe('database and place CRUD', () => {
   });
 
   it('lists categories alphabetically while keeping Other last', async () => {
-    const { listCategories } = await import('$lib/server/db/queries/categories');
+    const { listCategories } = await import('#lib/server/db/queries/categories.js');
     expect(listCategories().map((category) => category.name)).toEqual([
       'Coffee',
       'Entertainment',
@@ -289,9 +290,9 @@ describe('database and place CRUD', () => {
   });
 
   it('stores only session token hashes and supports revocation', async () => {
-    const { getDatabase } = await import('$lib/server/db/driver');
+    const { getDatabase } = await import('#lib/server/db/driver.js');
     const { createSession, deleteSession, sha256, validateSession } =
-      await import('$lib/server/auth/sessions');
+      await import('#lib/server/auth/sessions.js');
     const passwordHash = '$argon2id$test-fingerprint';
     vi.useFakeTimers();
     try {
@@ -323,8 +324,8 @@ describe('database and place CRUD', () => {
   });
 
   it('exports every place beyond the interactive listing limit without N+1 lookups', async () => {
-    const { getDatabase } = await import('$lib/server/db/driver');
-    const { allPlaceDetails } = await import('$lib/server/export/geojson');
+    const { getDatabase } = await import('#lib/server/db/driver.js');
+    const { allPlaceDetails } = await import('#lib/server/export/geojson.js');
     const database = getDatabase();
     const insert = database.prepare(
       `INSERT INTO places (
@@ -360,8 +361,8 @@ describe('database and place CRUD', () => {
   });
 
   it('creates a consistent backup that passes restore inspection', async () => {
-    const { createBackup, backupPath } = await import('$lib/server/backup/create');
-    const { inspectRestore } = await import('$lib/server/backup/restore');
+    const { createBackup, backupPath } = await import('#lib/server/backup/create.js');
+    const { inspectRestore } = await import('#lib/server/backup/restore.js');
     const created = await createBackup();
     expect(created.manifest.schemaVersion).toBe(3);
     const inspection = await inspectRestore(backupPath(created.id));
@@ -369,8 +370,8 @@ describe('database and place CRUD', () => {
   });
 
   it('rejects corrupted backups during restore inspection', async () => {
-    const { createBackup, backupPath } = await import('$lib/server/backup/create');
-    const { inspectRestore } = await import('$lib/server/backup/restore');
+    const { createBackup, backupPath } = await import('#lib/server/backup/create.js');
+    const { inspectRestore } = await import('#lib/server/backup/restore.js');
     const created = await createBackup();
     const contents = readFileSync(backupPath(created.id));
     contents[Math.floor(contents.length / 2)] ^= 0xff;
@@ -384,11 +385,11 @@ describe('database and place CRUD', () => {
   });
 
   it('rejects corrupt photos and serializes attachment deletion with backups', async () => {
-    const { createPlace, deletePlace } = await import('$lib/server/services/places');
-    const { processPhoto, removePhoto } = await import('$lib/server/storage/photos');
-    const { storagePaths } = await import('$lib/server/storage/paths');
-    const { createBackup, backupPath } = await import('$lib/server/backup/create');
-    const { inspectRestore } = await import('$lib/server/backup/restore');
+    const { createPlace, deletePlace } = await import('#lib/server/services/places.js');
+    const { processPhoto, removePhoto } = await import('#lib/server/storage/photos.js');
+    const { storagePaths } = await import('#lib/server/storage/paths.js');
+    const { createBackup, backupPath } = await import('#lib/server/backup/create.js');
+    const { inspectRestore } = await import('#lib/server/backup/restore.js');
     const place = createPlace({
       name: 'Photo concurrency test',
       latitude: 40,
@@ -437,7 +438,7 @@ describe('database and place CRUD', () => {
   });
 
   it('streams browser restore uploads to staging storage', async () => {
-    const { streamRestoreUpload } = await import('$lib/server/backup/upload');
+    const { streamRestoreUpload } = await import('#lib/server/backup/upload.js');
     const form = new FormData();
     form.set('file', new File(['streamed restore'], 'backup.zip', { type: 'application/zip' }));
     const upload = await streamRestoreUpload(
@@ -452,7 +453,7 @@ describe('database and place CRUD', () => {
   });
 
   it('uses a fallback name for photo uploads without a filename', async () => {
-    const { streamSinglePhoto } = await import('$lib/server/storage/uploads');
+    const { streamSinglePhoto } = await import('#lib/server/storage/uploads.js');
     const boundary = 'mapme-photo-boundary';
     const body = [
       `--${boundary}`,
@@ -480,8 +481,8 @@ describe('database and place CRUD', () => {
   });
 
   it('enforces photo upload byte limits while streaming', async () => {
-    const { privateConfig } = await import('$lib/server/config/private');
-    const { streamSinglePhoto } = await import('$lib/server/storage/uploads');
+    const { privateConfig } = await import('#lib/server/config/private.js');
+    const { streamSinglePhoto } = await import('#lib/server/storage/uploads.js');
     const form = new FormData();
     form.set(
       'photo',
@@ -502,9 +503,9 @@ describe('database and place CRUD', () => {
   });
 
   it('activates a staged restore and reopens the restored database', async () => {
-    const { createBackup, backupPath } = await import('$lib/server/backup/create');
-    const { confirmRestore, inspectRestore } = await import('$lib/server/backup/restore');
-    const { closeDatabase, getDatabase } = await import('$lib/server/db/driver');
+    const { createBackup, backupPath } = await import('#lib/server/backup/create.js');
+    const { confirmRestore, inspectRestore } = await import('#lib/server/backup/restore.js');
+    const { closeDatabase, getDatabase } = await import('#lib/server/db/driver.js');
     const { activatePendingRestore } = await import('../../scripts/activate-restore.mjs');
     const created = await createBackup();
     const inspection = await inspectRestore(backupPath(created.id));

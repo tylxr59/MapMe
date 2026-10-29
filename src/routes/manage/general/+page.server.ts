@@ -1,14 +1,14 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { hashPassword } from '$lib/server/auth/password';
-import { clearSessions, createSession, SESSION_COOKIE } from '$lib/server/auth/sessions';
+import { hashPassword } from '#lib/server/auth/password.js';
+import { clearSessions, createSession, SESSION_COOKIE } from '#lib/server/auth/sessions.js';
 import {
   appConfigSchema,
   getAppConfig,
   parseTrustedCidrs,
   requestOrigin,
   saveAppConfig
-} from '$lib/server/config/app';
+} from '#lib/server/config/app.js';
 
 export const load: PageServerLoad = ({ request }) => {
   const config = getAppConfig();

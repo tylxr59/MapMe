@@ -1,18 +1,18 @@
 import { fail } from '@sveltejs/kit';
 import { ZodError } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
-import { formDataObject } from '$lib/schemas/common';
-import { filtersSchema } from '$lib/schemas/filters';
-import { placeFavoriteSchema, placeIdSchema, placeInputSchema } from '$lib/schemas/place';
-import { listCategories } from '$lib/server/db/queries/categories';
-import { listPlaceLists } from '$lib/server/db/queries/lists';
-import { listPlaces } from '$lib/server/db/queries/places';
+import { formDataObject } from '#lib/schemas/common.js';
+import { filtersSchema } from '#lib/schemas/filters.js';
+import { placeFavoriteSchema, placeIdSchema, placeInputSchema } from '#lib/schemas/place.js';
+import { listCategories } from '#lib/server/db/queries/categories.js';
+import { listPlaceLists } from '#lib/server/db/queries/lists.js';
+import { listPlaces } from '#lib/server/db/queries/places.js';
 import {
   createPlace,
   deletePlace,
   setPlaceFavorite,
   updatePlace
-} from '$lib/server/services/places';
+} from '#lib/server/services/places.js';
 
 export const load: PageServerLoad = ({ url }) => {
   const parsedFilters = filtersSchema.parse({

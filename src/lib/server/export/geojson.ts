@@ -1,4 +1,4 @@
-import { allPlaceDetails as queryAllPlaceDetails } from '$lib/server/db/queries/places';
+import { allPlaceDetails as queryAllPlaceDetails } from '#lib/server/db/queries/places.js';
 
 export function allPlaceDetails() {
   return queryAllPlaceDetails();

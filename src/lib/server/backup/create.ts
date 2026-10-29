@@ -6,11 +6,11 @@ import { createReadStream, createWriteStream } from 'node:fs';
 import { rename, rm, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
-import type { BackupManifest } from '$lib/types';
-import { getDatabase } from '$lib/server/db/driver';
-import { storagePaths, safeStoragePath } from '$lib/server/storage/paths';
-import { appVersion } from '$lib/server/config/public';
-import { mutationLock } from '$lib/server/mutation-lock';
+import type { BackupManifest } from '#lib/types/index.js';
+import { getDatabase } from '#lib/server/db/driver.js';
+import { storagePaths, safeStoragePath } from '#lib/server/storage/paths.js';
+import { appVersion } from '#lib/server/config/public.js';
+import { mutationLock } from '#lib/server/mutation-lock.js';
 
 const ZipArchive = (
   archiverModule as unknown as {

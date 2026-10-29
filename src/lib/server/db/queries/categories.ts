@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { categoryIconSvg } from '$lib/icons/category-icons';
-import type { CategoryDTO } from '$lib/types';
+import { categoryIconSvg } from '#lib/icons/category-icons.js';
+import type { CategoryDTO } from '#lib/types/index.js';
 import { getDatabase } from '../driver';
 
 interface CategoryRow {

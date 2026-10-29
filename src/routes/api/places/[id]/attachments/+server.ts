@@ -1,8 +1,8 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
-import { uuidSchema } from '$lib/schemas/common';
-import { assertSameOrigin } from '$lib/server/security/origin';
-import { streamSinglePhoto } from '$lib/server/storage/uploads';
-import { processPhoto } from '$lib/server/storage/photos';
+import { uuidSchema } from '#lib/schemas/common.js';
+import { assertSameOrigin } from '#lib/server/security/origin.js';
+import { streamSinglePhoto } from '#lib/server/storage/uploads.js';
+import { processPhoto } from '#lib/server/storage/photos.js';
 
 export const POST: RequestHandler = async ({ params, request }) => {
   assertSameOrigin(request);

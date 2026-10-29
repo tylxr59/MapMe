@@ -1,11 +1,12 @@
-import { redirect, type Handle, type ServerInit } from '@sveltejs/kit';
-import { dev } from '$app/environment';
-import { privateConfig } from '$lib/server/config/private';
-import { getAppConfig, requestOrigin } from '$lib/server/config/app';
-import { getDatabase } from '$lib/server/db/driver';
-import { initializeStorage, cleanupStaging } from '$lib/server/storage/paths';
-import { SESSION_COOKIE, validateSession } from '$lib/server/auth/sessions';
-import { proxyIdentity } from '$lib/server/auth/proxy';
+import { redirect } from '@sveltejs/kit';
+import type { Handle, ServerInit } from '@sveltejs/kit/hooks';
+import { dev } from '$app/env';
+import { privateConfig } from '#lib/server/config/private.js';
+import { getAppConfig, requestOrigin } from '#lib/server/config/app.js';
+import { getDatabase } from '#lib/server/db/driver.js';
+import { initializeStorage, cleanupStaging } from '#lib/server/storage/paths.js';
+import { SESSION_COOKIE, validateSession } from '#lib/server/auth/sessions.js';
+import { proxyIdentity } from '#lib/server/auth/proxy.js';
 
 export const init: ServerInit = async () => {
   await initializeStorage();

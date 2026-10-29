@@ -1,7 +1,7 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
-import { uuidSchema } from '$lib/schemas/common';
-import { assertSameOrigin } from '$lib/server/security/origin';
-import { removePhoto } from '$lib/server/storage/photos';
+import { uuidSchema } from '#lib/schemas/common.js';
+import { assertSameOrigin } from '#lib/server/security/origin.js';
+import { removePhoto } from '#lib/server/storage/photos.js';
 
 export const DELETE: RequestHandler = async ({ params, request }) => {
   assertSameOrigin(request);

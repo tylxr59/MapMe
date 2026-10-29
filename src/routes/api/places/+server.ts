@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { filtersSchema } from '$lib/schemas/filters';
-import { listPlaces } from '$lib/server/db/queries/places';
+import { filtersSchema } from '#lib/schemas/filters.js';
+import { listPlaces } from '#lib/server/db/queries/places.js';
 
 export const GET: RequestHandler = ({ url }) => {
   const filters = filtersSchema.parse({

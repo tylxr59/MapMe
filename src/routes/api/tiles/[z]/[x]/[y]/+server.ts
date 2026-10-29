@@ -1,9 +1,9 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
 import packageJson from '../../../../../../../package.json';
-import { privateConfig } from '$lib/server/config/private';
-import { getAppConfig } from '$lib/server/config/app';
-import { storagePaths } from '$lib/server/storage/paths';
-import { originOnlyReferer, parseTileCoordinates, TileCache } from '$lib/server/tiles/cache';
+import { privateConfig } from '#lib/server/config/private.js';
+import { getAppConfig } from '#lib/server/config/app.js';
+import { storagePaths } from '#lib/server/storage/paths.js';
+import { originOnlyReferer, parseTileCoordinates, TileCache } from '#lib/server/tiles/cache.js';
 
 const tileCache = new TileCache({
   directory: storagePaths.tileCache,

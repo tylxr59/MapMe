@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { ArrowRight, LoaderCircle, LockKeyhole } from '@lucide/svelte';
-  import AtlasPanel from '$lib/components/brand/AtlasPanel.svelte';
+  import AtlasPanel from '#lib/components/brand/AtlasPanel.svelte';
   let { form } = $props();
   let submitting = $state(false);
 </script>

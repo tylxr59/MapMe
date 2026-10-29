@@ -11,8 +11,8 @@
     Trash2,
     X
   } from '@lucide/svelte';
-  import CategoryIconPicker from '$lib/components/categories/CategoryIconPicker.svelte';
-  import { categoryIconSvg } from '$lib/icons/category-icons';
+  import CategoryIconPicker from '#lib/components/categories/CategoryIconPicker.svelte';
+  import { categoryIconSvg } from '#lib/icons/category-icons.js';
 
   let { data, form } = $props();
   let showCreate = $state(false);

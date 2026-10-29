@@ -4,7 +4,7 @@
     categoryIconSvg,
     isValidCategoryIcon,
     searchCategoryIcons
-  } from '$lib/icons/category-icons';
+  } from '#lib/icons/category-icons.js';
 
   let {
     value,

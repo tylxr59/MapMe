@@ -12,7 +12,12 @@
     Trash2,
     X
   } from '@lucide/svelte';
-  import type { CategoryDTO, PlaceDetail, PlaceListDTO, SafeClientConfig } from '$lib/types';
+  import type {
+    CategoryDTO,
+    PlaceDetail,
+    PlaceListDTO,
+    SafeClientConfig
+  } from '#lib/types/index.js';
 
   let {
     place = null,

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { LoaderCircle, LocateFixed } from '@lucide/svelte';
   import { onMount } from 'svelte';
-  import type { MapPlace } from '$lib/types';
+  import type { MapPlace } from '#lib/types/index.js';
 
   let {
     places,

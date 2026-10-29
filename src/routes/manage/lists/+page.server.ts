@@ -1,8 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { listDeleteSchema, listSchema } from '$lib/schemas/list';
-import { listPlaceLists } from '$lib/server/db/queries/lists';
-import { deletePlaceList, savePlaceList } from '$lib/server/services/lists';
+import { listDeleteSchema, listSchema } from '#lib/schemas/list.js';
+import { listPlaceLists } from '#lib/server/db/queries/lists.js';
+import { deletePlaceList, savePlaceList } from '#lib/server/services/lists.js';
 
 export const load: PageServerLoad = () => ({ lists: listPlaceLists() });
 

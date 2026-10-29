@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { isValidCategoryIcon } from '$lib/icons/category-icons';
-import { normalizeName } from '$lib/schemas/common';
+import { isValidCategoryIcon } from '#lib/icons/category-icons.js';
+import { normalizeName } from '#lib/schemas/common.js';
 import type { z } from 'zod';
-import type { categorySchema } from '$lib/schemas/category';
-import { transaction } from '$lib/server/db/transaction';
-import { listCategories } from '$lib/server/db/queries/categories';
+import type { categorySchema } from '#lib/schemas/category.js';
+import { transaction } from '#lib/server/db/transaction.js';
+import { listCategories } from '#lib/server/db/queries/categories.js';
 
 type CategoryInput = z.infer<typeof categorySchema>;
 

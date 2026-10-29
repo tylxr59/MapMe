@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseCsvImport } from '$lib/server/import/csv';
-import { parseGeoJsonImport } from '$lib/server/import/geojson';
-import { parseGpxImport } from '$lib/server/import/gpx';
-import { parseKmlImport } from '$lib/server/import/kml';
+import { parseCsvImport } from '#lib/server/import/csv.js';
+import { parseGeoJsonImport } from '#lib/server/import/geojson.js';
+import { parseGpxImport } from '#lib/server/import/gpx.js';
+import { parseKmlImport } from '#lib/server/import/kml.js';
 
 describe('GeoJSON import', () => {
   it('reads point geometry and preserves unknown properties', () => {

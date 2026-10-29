@@ -1,17 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { rm } from 'node:fs/promises';
 import type { DatabaseSync } from 'node:sqlite';
-import { normalizeName } from '$lib/schemas/common';
-import type { ValidatedPlaceInput } from '$lib/schemas/place';
-import type { PlaceDetail } from '$lib/types';
-import { transaction } from '$lib/server/db/transaction';
-import { getPlace } from '$lib/server/db/queries/places';
-import { categoryExists } from '$lib/server/db/queries/categories';
-import { placeListExists } from '$lib/server/db/queries/lists';
-import { refreshPlaceSearch } from '$lib/server/db/queries/search';
-import { getDatabase } from '$lib/server/db/driver';
-import { storagePaths, safeStoragePath } from '$lib/server/storage/paths';
-import { mutationLock } from '$lib/server/mutation-lock';
+import { normalizeName } from '#lib/schemas/common.js';
+import type { ValidatedPlaceInput } from '#lib/schemas/place.js';
+import type { PlaceDetail } from '#lib/types/index.js';
+import { transaction } from '#lib/server/db/transaction.js';
+import { getPlace } from '#lib/server/db/queries/places.js';
+import { categoryExists } from '#lib/server/db/queries/categories.js';
+import { placeListExists } from '#lib/server/db/queries/lists.js';
+import { refreshPlaceSearch } from '#lib/server/db/queries/search.js';
+import { getDatabase } from '#lib/server/db/driver.js';
+import { storagePaths, safeStoragePath } from '#lib/server/storage/paths.js';
+import { mutationLock } from '#lib/server/mutation-lock.js';
 
 function replacePlaceLinks(
   database: DatabaseSync,

@@ -1,8 +1,8 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { rm } from 'node:fs/promises';
-import { assertSameOrigin } from '$lib/server/security/origin';
-import { inspectRestore } from '$lib/server/backup/restore';
-import { streamRestoreUpload } from '$lib/server/backup/upload';
+import { assertSameOrigin } from '#lib/server/security/origin.js';
+import { inspectRestore } from '#lib/server/backup/restore.js';
+import { streamRestoreUpload } from '#lib/server/backup/upload.js';
 
 export const POST: RequestHandler = async ({ request }) => {
   assertSameOrigin(request);

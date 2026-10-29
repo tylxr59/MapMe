@@ -1,6 +1,6 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
-import { uuidSchema } from '$lib/schemas/common';
-import { getPlace } from '$lib/server/db/queries/places';
+import { uuidSchema } from '#lib/schemas/common.js';
+import { getPlace } from '#lib/server/db/queries/places.js';
 
 export const GET: RequestHandler = ({ params }) => {
   const id = uuidSchema.safeParse(params.id);

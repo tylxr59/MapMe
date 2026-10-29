@@ -1,4 +1,4 @@
-import type { SafeClientConfig } from '$lib/types';
+import type { SafeClientConfig } from '#lib/types/index.js';
 import { privateConfig } from './private';
 import { getAppConfig } from './app';
 import packageJson from '../../../../package.json';

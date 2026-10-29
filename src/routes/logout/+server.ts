@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { deleteSession, SESSION_COOKIE } from '$lib/server/auth/sessions';
+import { deleteSession, SESSION_COOKIE } from '#lib/server/auth/sessions.js';
 
 export const POST: RequestHandler = ({ cookies, locals }) => {
   if (locals.sessionToken) deleteSession(locals.sessionToken);

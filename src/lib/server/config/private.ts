@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 import { resolve } from 'node:path';
 
 const booleanEnv = (defaultValue: 'true' | 'false' = 'false') =>

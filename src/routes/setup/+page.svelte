@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ArrowRight, Check, Database, LockKeyhole, Network, ShieldCheck } from '@lucide/svelte';
-  import AtlasPanel from '$lib/components/brand/AtlasPanel.svelte';
+  import AtlasPanel from '#lib/components/brand/AtlasPanel.svelte';
 
   let { data, form } = $props();
   // svelte-ignore state_referenced_locally

@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { PlaceLinkDTO } from '$lib/types';
+import type { PlaceLinkDTO } from '#lib/types/index.js';
 import { getDatabase } from '../driver';
 
 interface LinkRow {

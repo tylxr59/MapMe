@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { AttachmentDTO } from '$lib/types';
+import type { AttachmentDTO } from '#lib/types/index.js';
 import { getDatabase } from '../driver';
 
 export interface AttachmentRow {

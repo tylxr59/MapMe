@@ -1,7 +1,7 @@
 import { access, chmod, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { privateConfig } from '$lib/server/config/private';
+import { privateConfig } from '#lib/server/config/private.js';
 
 export const storagePaths = Object.freeze({
   database: privateConfig.databasePath,

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import ipaddr from 'ipaddr.js';
-import { getDatabase } from '$lib/server/db/driver';
+import { getDatabase } from '#lib/server/db/driver.js';
 import { privateConfig } from './private';
 
 const SETTINGS_KEY = 'app_configuration';

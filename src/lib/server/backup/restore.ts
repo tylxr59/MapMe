@@ -6,10 +6,10 @@ import { createReadStream, createWriteStream } from 'node:fs';
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, posix } from 'node:path';
 import { pipeline } from 'node:stream/promises';
-import type { BackupManifest } from '$lib/types';
-import { privateConfig } from '$lib/server/config/private';
-import { databaseHealth } from '$lib/server/db/driver';
-import { storagePaths } from '$lib/server/storage/paths';
+import type { BackupManifest } from '#lib/types/index.js';
+import { privateConfig } from '#lib/server/config/private.js';
+import { databaseHealth } from '#lib/server/db/driver.js';
+import { storagePaths } from '#lib/server/storage/paths.js';
 import { createBackup } from './create';
 
 interface RestoreInspection {

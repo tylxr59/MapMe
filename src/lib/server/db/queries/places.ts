@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { PlaceDetail, PlaceFilters, PlaceSummary } from '$lib/types';
+import type { PlaceDetail, PlaceFilters, PlaceSummary } from '#lib/types/index.js';
 import { getDatabase } from '../driver';
 import { allAttachmentsByPlace, attachmentsForPlace } from './attachments';
 import { mapCategory } from './categories';

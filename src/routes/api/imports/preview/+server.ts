@@ -1,7 +1,7 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
-import { privateConfig } from '$lib/server/config/private';
-import { stageImport } from '$lib/server/import/common';
-import { assertSameOrigin } from '$lib/server/security/origin';
+import { privateConfig } from '#lib/server/config/private.js';
+import { stageImport } from '#lib/server/import/common.js';
+import { assertSameOrigin } from '#lib/server/security/origin.js';
 
 export const POST: RequestHandler = async ({ request }) => {
   assertSameOrigin(request);

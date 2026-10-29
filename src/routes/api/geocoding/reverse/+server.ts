@@ -1,7 +1,7 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
 import { z } from 'zod';
-import { privateConfig } from '$lib/server/config/private';
-import { nominatimProvider } from '$lib/server/geocoding/nominatim';
+import { privateConfig } from '#lib/server/config/private.js';
+import { nominatimProvider } from '#lib/server/geocoding/nominatim.js';
 
 const coordinatesSchema = z.object({
   latitude: z.coerce.number().finite().min(-90).max(90),

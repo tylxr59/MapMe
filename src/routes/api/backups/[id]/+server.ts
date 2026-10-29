@@ -2,8 +2,8 @@ import { error, type RequestHandler } from '@sveltejs/kit';
 import { createReadStream } from 'node:fs';
 import { rm, stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
-import { assertSameOrigin } from '$lib/server/security/origin';
-import { backupPath } from '$lib/server/backup/create';
+import { assertSameOrigin } from '#lib/server/security/origin.js';
+import { backupPath } from '#lib/server/backup/create.js';
 
 export const GET: RequestHandler = async ({ params }) => {
   const id = params.id;

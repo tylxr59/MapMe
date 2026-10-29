@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { createBackup, listBackups } from '$lib/server/backup/create';
-import { assertSameOrigin } from '$lib/server/security/origin';
+import { createBackup, listBackups } from '#lib/server/backup/create.js';
+import { assertSameOrigin } from '#lib/server/security/origin.js';
 
 export const GET: RequestHandler = async () => Response.json({ backups: await listBackups() });
 

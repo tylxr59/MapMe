@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { ArrowLeft, Database, ListChecks, Settings2, Shapes } from '@lucide/svelte';
-  import BrandMark from '$lib/components/brand/BrandMark.svelte';
+  import BrandMark from '#lib/components/brand/BrandMark.svelte';
   let { children } = $props();
 
   const sections = [

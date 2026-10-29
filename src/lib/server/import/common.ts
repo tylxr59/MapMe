@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { normalizeName } from '$lib/schemas/common';
-import { placeInputSchema } from '$lib/schemas/place';
+import { normalizeName } from '#lib/schemas/common.js';
+import { placeInputSchema } from '#lib/schemas/place.js';
 import type {
   CategoryDTO,
   ImportPreview,
@@ -10,12 +10,12 @@ import type {
   PlaceInput,
   PlaceLinkInput,
   PlaceListDTO
-} from '$lib/types';
-import { listCategories } from '$lib/server/db/queries/categories';
-import { listPlaceLists } from '$lib/server/db/queries/lists';
-import { findDuplicatePlace } from '$lib/server/db/queries/places';
-import { getDatabase } from '$lib/server/db/driver';
-import { storagePaths } from '$lib/server/storage/paths';
+} from '#lib/types/index.js';
+import { listCategories } from '#lib/server/db/queries/categories.js';
+import { listPlaceLists } from '#lib/server/db/queries/lists.js';
+import { findDuplicatePlace } from '#lib/server/db/queries/places.js';
+import { getDatabase } from '#lib/server/db/driver.js';
+import { storagePaths } from '#lib/server/storage/paths.js';
 import { parseCsvImport } from './csv';
 import { parseGeoJsonImport } from './geojson';
 import { parseGpxImport } from './gpx';

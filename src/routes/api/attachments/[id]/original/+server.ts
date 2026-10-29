@@ -1,8 +1,8 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
 import { readFile } from 'node:fs/promises';
-import { uuidSchema } from '$lib/schemas/common';
-import { attachmentById } from '$lib/server/db/queries/attachments';
-import { safeStoragePath, storagePaths } from '$lib/server/storage/paths';
+import { uuidSchema } from '#lib/schemas/common.js';
+import { attachmentById } from '#lib/server/db/queries/attachments.js';
+import { safeStoragePath, storagePaths } from '#lib/server/storage/paths.js';
 
 function contentDispositionFilename(name: string): string {
   const fallback = name.replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 100) || 'photo';

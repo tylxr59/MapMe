@@ -1,8 +1,8 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
 import { readFile } from 'node:fs/promises';
-import { uuidSchema } from '$lib/schemas/common';
-import { attachmentById } from '$lib/server/db/queries/attachments';
-import { safeStoragePath, storagePaths } from '$lib/server/storage/paths';
+import { uuidSchema } from '#lib/schemas/common.js';
+import { attachmentById } from '#lib/server/db/queries/attachments.js';
+import { safeStoragePath, storagePaths } from '#lib/server/storage/paths.js';
 
 export const GET: RequestHandler = async ({ params }) => {
   const id = uuidSchema.safeParse(params.id);

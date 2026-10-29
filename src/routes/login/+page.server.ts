@@ -1,14 +1,14 @@
 import { fail, redirect, type Actions } from '@sveltejs/kit';
-import { getAppConfig } from '$lib/server/config/app';
-import { verifyPassword } from '$lib/server/auth/password';
+import { getAppConfig } from '#lib/server/config/app.js';
+import { verifyPassword } from '#lib/server/auth/password.js';
 import {
   clearLoginFailures,
   loginClientKey,
   loginRateLimit,
   recordLoginFailure
-} from '$lib/server/auth/rate-limit';
-import { createSession, SESSION_COOKIE } from '$lib/server/auth/sessions';
-import { safeLocalRedirect } from '$lib/server/security/redirect';
+} from '#lib/server/auth/rate-limit.js';
+import { createSession, SESSION_COOKIE } from '#lib/server/auth/sessions.js';
+import { safeLocalRedirect } from '#lib/server/security/redirect.js';
 
 export const actions = {
   default: async (event) => {

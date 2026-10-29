@@ -1,8 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { categoryDeleteSchema, categorySchema } from '$lib/schemas/category';
-import { listCategories } from '$lib/server/db/queries/categories';
-import { deleteCategory, saveCategory } from '$lib/server/services/categories';
+import { categoryDeleteSchema, categorySchema } from '#lib/schemas/category.js';
+import { listCategories } from '#lib/server/db/queries/categories.js';
+import { deleteCategory, saveCategory } from '#lib/server/services/categories.js';
 
 export const load: PageServerLoad = () => ({ categories: listCategories() });
 

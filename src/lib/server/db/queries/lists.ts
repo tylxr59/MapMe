@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { PlaceListDTO } from '$lib/types';
+import type { PlaceListDTO } from '#lib/types/index.js';
 import { getDatabase } from '../driver';
 
 interface ListRow {
