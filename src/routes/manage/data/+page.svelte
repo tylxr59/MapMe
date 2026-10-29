@@ -360,7 +360,7 @@
     color: var(--accent-text);
     padding: 0.58rem 0.7rem;
     text-decoration: none;
-    font-weight: 750;
+    font-weight: 600;
     font-size: 0.78rem;
   }
   .wide {

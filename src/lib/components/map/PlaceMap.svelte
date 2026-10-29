@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { LoaderCircle, LocateFixed } from '@lucide/svelte';
   import { onMount } from 'svelte';
   import type { MapPlace } from '$lib/types';
 
@@ -32,6 +33,7 @@
   let draftMarker: import('leaflet').Marker | null = null;
   let leaflet: typeof import('leaflet') | null = null;
   let initialTileState = $state<'loading' | 'slow' | 'ready'>('loading');
+  let locating = $state(false);
   const placeFocusZoom = 15;
 
   function saveViewport() {
@@ -45,16 +47,19 @@
   }
 
   function centerOnCurrentLocation() {
-    if (!map || !navigator.geolocation) return;
+    if (!map || !navigator.geolocation || locating) return;
 
+    locating = true;
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        locating = false;
         if (!map) return;
-        map.setView([coords.latitude, coords.longitude], 13);
+        map.setView([coords.latitude, coords.longitude], Math.max(map.getZoom(), 13));
         saveViewport();
       },
       () => {
-        // Keep the default view when location access is denied or unavailable.
+        // Keep the current view when location access is denied or unavailable.
+        locating = false;
       },
       {
         enableHighAccuracy: false,
@@ -65,7 +70,22 @@
   }
 
   function markerHtml(place: MapPlace): string {
-    return `<div class="mapme-marker" style="background:${place.category.color}">${place.category.iconSvg}</div>`;
+    const classes = ['mapme-marker-wrap'];
+    if (place.id === selectedId) classes.push('is-selected');
+    if (place.isFavorite) classes.push('is-favorite');
+    if (place.isArchived) classes.push('is-archived');
+    return `<div class="${classes.join(' ')}" style="--pin:${place.category.color}"><div class="mapme-marker">${place.category.iconSvg}</div></div>`;
+  }
+
+  function clusterIcon(group: import('leaflet').MarkerCluster) {
+    const count = group.getChildCount();
+    const size = count < 10 ? 36 : count < 50 ? 42 : 50;
+    const tier = count < 10 ? 'is-small' : count < 50 ? 'is-medium' : 'is-large';
+    return leaflet!.divIcon({
+      html: `<div class="mapme-cluster ${tier}">${count}</div>`,
+      className: 'marker-cluster',
+      iconSize: [size, size]
+    });
   }
 
   function refreshMarkers() {
@@ -80,9 +100,14 @@
           iconAnchor: [17, 34],
           popupAnchor: [0, -34]
         }),
-        title: place.name
+        title: place.name,
+        zIndexOffset: place.id === selectedId ? 500 : 0
       });
-      marker.bindTooltip(place.name, { direction: 'top', offset: [0, -28] });
+      marker.bindTooltip(place.name, {
+        direction: 'top',
+        offset: [0, -30],
+        className: 'mapme-tooltip'
+      });
       marker.on('click', () => onselect(place.id));
       cluster.addLayer(marker);
       if (place.id === selectedId) {
@@ -110,7 +135,7 @@
           draggable: true,
           zIndexOffset: 1000,
           icon: leaflet.divIcon({
-            html: '<div class="mapme-marker mapme-draft-marker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></div>',
+            html: '<div class="mapme-marker-wrap"><div class="mapme-marker mapme-draft-marker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></div></div>',
             className: '',
             iconSize: [34, 34],
             iconAnchor: [17, 34]
@@ -187,7 +212,11 @@
       }, 8_000);
       tileLayer.addTo(map);
       leaflet.control.zoom({ position: 'topright' }).addTo(map);
-      cluster = leaflet.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 48 });
+      cluster = leaflet.markerClusterGroup({
+        showCoverageOnHover: false,
+        maxClusterRadius: 48,
+        iconCreateFunction: clusterIcon
+      });
       map.addLayer(cluster);
       map.on('click', (event) =>
         onmapclick({ latitude: event.latlng.lat, longitude: event.latlng.lng })
@@ -197,7 +226,10 @@
       if (!saved) centerOnCurrentLocation();
       refreshMarkers();
       refreshDraft();
-      resizeObserver = new ResizeObserver(() => map?.invalidateSize({ pan: false }));
+      resizeObserver = new ResizeObserver(() =>
+        // Keep the visual center fixed while side panels slide in and out.
+        map?.invalidateSize({ pan: true, animate: false, debounceMoveend: true })
+      );
       resizeObserver.observe(container);
       setTimeout(() => map?.invalidateSize(), 0);
     })();
@@ -213,6 +245,16 @@
 
 <div class="map-shell">
   <div class="map" bind:this={container} aria-label="Saved places map"></div>
+  <button
+    type="button"
+    class="locate"
+    onclick={centerOnCurrentLocation}
+    disabled={locating}
+    aria-label="Center map on my location"
+    title="Center map on my location"
+  >
+    {#if locating}<LoaderCircle class="spin" size={18} />{:else}<LocateFixed size={18} />{/if}
+  </button>
   {#if initialTileState !== 'ready'}
     <div
       class="tile-status"
@@ -254,6 +296,30 @@
     min-height: 20rem;
   }
 
+  .locate {
+    position: absolute;
+    z-index: 800;
+    top: 6.6rem;
+    right: 1rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--cream);
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-float);
+    transition:
+      background 120ms ease,
+      color 120ms ease;
+  }
+
+  .locate:hover {
+    background: var(--surface-muted);
+    color: var(--brand-text);
+  }
+
   .tile-status {
     position: absolute;
     z-index: 1000;
@@ -263,34 +329,36 @@
     max-width: min(28rem, calc(100% - 2rem));
     align-items: center;
     gap: 0.75rem;
-    padding: 0.7rem 0.9rem;
-    border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-    border-radius: 0.75rem;
-    background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
-    box-shadow: 0 0.4rem 1.25rem rgb(15 23 42 / 18%);
+    padding: 0.65rem 1rem 0.65rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--cream) 90%, transparent);
+    box-shadow: var(--shadow-float);
     color: var(--text);
     pointer-events: none;
     transform: translateX(-50%);
-    backdrop-filter: blur(0.4rem);
+    backdrop-filter: blur(10px) saturate(1.4);
+    animation: tile-status-in 320ms var(--ease-out);
   }
 
   .tile-status.slow {
-    border-color: color-mix(in srgb, var(--danger) 50%, var(--line));
+    border-color: color-mix(in srgb, var(--marigold) 55%, var(--line));
   }
 
   .tile-status span:last-child {
     display: grid;
-    gap: 0.1rem;
+    gap: 0.05rem;
   }
 
   .tile-status strong {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
     line-height: 1.25;
   }
 
   .tile-status small {
     color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     line-height: 1.3;
   }
 
@@ -298,10 +366,15 @@
     width: 1rem;
     height: 1rem;
     flex: 0 0 auto;
-    border: 2px solid color-mix(in srgb, var(--green-700) 25%, transparent);
-    border-top-color: var(--green-700);
+    border: 2px solid color-mix(in srgb, var(--brand-text) 22%, transparent);
+    border-top-color: var(--brand-text);
     border-radius: 50%;
     animation: tile-spin 0.8s linear infinite;
+  }
+
+  .tile-status.slow .tile-spinner {
+    border-color: color-mix(in srgb, var(--marigold) 25%, transparent);
+    border-top-color: var(--marigold);
   }
 
   @keyframes tile-spin {
@@ -310,10 +383,17 @@
     }
   }
 
+  @keyframes tile-status-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -6px);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .tile-spinner {
       animation: none;
-      border-color: var(--green-700);
+      border-color: var(--brand-text);
     }
   }
 </style>

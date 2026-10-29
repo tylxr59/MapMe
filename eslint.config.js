@@ -31,7 +31,9 @@ export default tseslint.config(
   {
     files: [
       'src/lib/components/categories/CategoryIconPicker.svelte',
+      'src/lib/components/filters/FilterBar.svelte',
       'src/lib/components/places/PlaceDetails.svelte',
+      'src/lib/components/places/PlaceEditor.svelte',
       'src/lib/components/places/PlaceListItem.svelte',
       'src/routes/manage/categories/+page.svelte'
     ],

@@ -147,7 +147,7 @@
     gap: 0.35rem;
     margin-bottom: 0.4rem;
     font-size: 0.82rem;
-    font-weight: 750;
+    font-weight: 600;
   }
   input[type='url'],
   input[type='password'],
@@ -226,7 +226,7 @@
     border-radius: 0.7rem;
     background: var(--accent-bg);
     color: var(--accent-text);
-    font-weight: 800;
+    font-weight: 650;
   }
   .message {
     margin: 0;

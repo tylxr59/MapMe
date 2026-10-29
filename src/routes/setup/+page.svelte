@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Check, Database, LockKeyhole, MapPinned, Network, ShieldCheck } from '@lucide/svelte';
+  import { ArrowRight, Check, Database, LockKeyhole, Network, ShieldCheck } from '@lucide/svelte';
+  import AtlasPanel from '$lib/components/brand/AtlasPanel.svelte';
 
   let { data, form } = $props();
   // svelte-ignore state_referenced_locally
@@ -9,14 +10,14 @@
 <svelte:head><title>Set up MapMe</title></svelte:head>
 
 <main class="setup-shell">
+  <AtlasPanel>
+    <p class="atlas-tagline">A private atlas<br />for the places<br /><em>you love.</em></p>
+  </AtlasPanel>
   <section class="setup-card">
     <header>
-      <span class="brand-icon"><MapPinned size={26} /></span>
-      <div>
-        <span class="eyebrow">First-run setup</span>
-        <h1>Make MapMe yours</h1>
-        <p>Your choices stay in the `/data` volume with the rest of your MapMe data.</p>
-      </div>
+      <span class="eyebrow">First-run setup · 2 quick choices</span>
+      <h1>Make MapMe yours</h1>
+      <p>Your choices stay in the <code>/data</code> volume with the rest of your MapMe data.</p>
     </header>
 
     <form method="POST">
@@ -120,7 +121,8 @@
       <section class="included">
         <div>
           <Database size={18} /><span
-            ><strong>Local by default</strong>Your places and uploads stay under `/data`.</span
+            ><strong>Local by default</strong>Your places and uploads stay under
+            <code>/data</code>.</span
           >
         </div>
         <div>
@@ -136,7 +138,7 @@
       </section>
 
       {#if form?.message}<p class="error" role="alert">{form.message}</p>{/if}
-      <button type="submit">Finish setup <Check size={18} /></button>
+      <button type="submit">Finish setup <ArrowRight size={18} /></button>
     </form>
   </section>
 </main>
@@ -148,116 +150,148 @@
   .setup-shell {
     min-height: 100dvh;
     display: grid;
-    place-items: center;
-    padding: 2rem 1rem;
-    background:
-      radial-gradient(circle at 12% 8%, var(--green-100), transparent 30%),
-      radial-gradient(circle at 90% 92%, var(--surface-selected), transparent 28%), var(--paper);
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    background: var(--cream) var(--grain);
+  }
+  .setup-shell :global(.atlas) {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+  }
+  .atlas-tagline {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 3.6vw, 3.2rem);
+    font-weight: 450;
+    font-variation-settings: 'opsz' 144;
+    letter-spacing: -0.012em;
+    line-height: 1.02;
+  }
+  .atlas-tagline em {
+    color: #f6b99f;
+    font-weight: 400;
   }
   .setup-card {
-    width: min(100%, 48rem);
-    padding: clamp(1.25rem, 4vw, 2.5rem);
-    border: 1px solid var(--line);
-    border-radius: 1.5rem;
-    background: var(--cream);
-    box-shadow: 0 24px 70px var(--shadow-panel);
+    width: min(100%, 46rem);
+    margin: 0 auto;
+    padding: clamp(1.5rem, 5vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+    animation: rise 480ms var(--ease-out) both;
   }
   header {
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
-    margin-bottom: 2rem;
-  }
-  .brand-icon {
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    width: 3.25rem;
-    height: 3.25rem;
-    border-radius: 1rem;
-    background: var(--accent-bg);
-    color: var(--accent-text);
+    margin-bottom: 2.25rem;
   }
   .eyebrow {
-    color: var(--green-700);
-    font-size: 0.75rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
+    color: var(--vermilion);
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
   }
   h1 {
-    margin: 0.2rem 0 0.35rem;
-    font-size: clamp(1.75rem, 5vw, 2.4rem);
+    margin: 0.5rem 0 0.6rem;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 560;
+    font-variation-settings: 'opsz' 120;
+    letter-spacing: -0.012em;
+    line-height: 1.02;
   }
   header p,
   .hint {
     margin: 0;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.55;
+  }
+  code {
+    padding: 0.1rem 0.35rem;
+    border-radius: var(--radius-xs);
+    background: var(--surface-muted);
+    font-family: var(--font-mono);
+    font-size: 0.85em;
   }
   form {
     display: grid;
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
   fieldset {
     margin: 0;
-    padding: 1.1rem;
+    padding: 1.35rem;
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-lg);
+    background: var(--surface-raised);
+    box-shadow: 0 1px 2px var(--shadow-soft);
   }
   legend {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0 0.4rem;
-    color: var(--green-800);
-    font-weight: 800;
+    gap: 0.5rem;
+    padding: 0 0.45rem;
+    color: var(--text);
+    font-weight: 650;
+  }
+  legend :global(svg) {
+    color: var(--brand-text);
   }
   .hint {
-    margin: 0 0 0.9rem;
-    font-size: 0.87rem;
+    margin: 0 0 1rem;
+    font-size: 0.86rem;
   }
   label:not(.choices label) {
     display: flex;
     align-items: center;
     gap: 0.35rem;
     margin-bottom: 0.4rem;
-    font-size: 0.82rem;
-    font-weight: 750;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
   }
   input[type='url'],
   input[type='password'],
   input:not([type]) {
     width: 100%;
-    min-height: 2.75rem;
-    padding: 0.7rem 0.8rem;
+    min-height: 2.8rem;
+    padding: 0.7rem 0.85rem;
     border: 1px solid var(--input-border);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-md);
     background: var(--input-bg);
+    outline: 0;
+    transition:
+      border-color 120ms ease,
+      box-shadow 120ms ease;
   }
   input:focus {
-    outline: 3px solid var(--focus-ring);
-    border-color: var(--green-700);
+    border-color: var(--brand-text);
+    box-shadow: 0 0 0 4px var(--focus-ring);
   }
   .choices {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.65rem;
+    gap: 0.6rem;
   }
   .choices label {
+    position: relative;
     display: flex;
+    align-items: flex-start;
     gap: 0.65rem;
-    min-height: 6.2rem;
-    padding: 0.85rem;
+    min-height: 6.4rem;
+    padding: 0.95rem;
     border: 1px solid var(--line);
-    border-radius: 0.8rem;
-    background: var(--surface-raised);
+    border-radius: var(--radius-md);
+    background: var(--cream);
     cursor: pointer;
+    transition:
+      border-color 120ms ease,
+      background 120ms ease,
+      transform 200ms var(--ease-spring);
+  }
+  .choices label:hover {
+    border-color: var(--line-strong);
+    transform: translateY(-1px);
   }
   .choices label.chosen {
-    border-color: var(--green-700);
+    border-color: var(--brand-text);
     background: var(--surface-selected);
-    box-shadow: 0 0 0 3px var(--focus-ring);
+    box-shadow: 0 0 0 1px var(--brand-text);
   }
   .choices input {
     margin-top: 0.2rem;
@@ -268,66 +302,109 @@
     align-content: start;
   }
   .choices strong {
-    display: grid;
-    gap: 0.2rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
   }
   .choices em {
-    width: fit-content;
-    color: var(--green-800);
-    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: var(--brand);
+    color: var(--accent-text);
+    font-size: 0.6rem;
     font-style: normal;
+    font-weight: 650;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
   }
   .choices small {
     color: var(--text-secondary);
-    line-height: 1.35;
+    font-size: 0.8rem;
+    line-height: 1.4;
   }
   .two-column {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.8rem;
-    margin-top: 0.9rem;
+    margin-top: 1rem;
   }
   .included {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.7rem;
+    gap: 1rem;
+    padding: 0.25rem 0.25rem 0;
   }
   .included div {
     display: flex;
-    gap: 0.55rem;
-    padding: 0.8rem;
-    border-radius: 0.8rem;
-    background: var(--surface-muted);
-    color: var(--green-800);
+    gap: 0.6rem;
+    color: var(--brand-text);
+  }
+  .included div :global(svg) {
+    flex: 0 0 auto;
+    margin-top: 0.1rem;
   }
   .included span {
     display: grid;
-    gap: 0.2rem;
+    gap: 0.15rem;
     color: var(--text-secondary);
-    font-size: 0.76rem;
-    line-height: 1.35;
+    font-size: 0.78rem;
+    line-height: 1.4;
   }
   .included strong {
     color: var(--text);
-    font-size: 0.82rem;
+    font-size: 0.84rem;
+    font-weight: 600;
   }
   button {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
-    min-height: 3rem;
+    gap: 0.5rem;
+    min-height: 3.2rem;
     border: 0;
-    border-radius: 0.8rem;
-    background: var(--accent-bg);
+    border-radius: var(--radius-md);
+    background: var(--brand);
     color: var(--accent-text);
-    font-weight: 800;
+    font-size: 0.98rem;
+    font-weight: 600;
+    box-shadow:
+      inset 0 1px 0 #ffffff26,
+      0 12px 24px -12px var(--brand);
+    transition:
+      background 120ms ease,
+      transform 160ms var(--ease-spring);
+  }
+  button:hover {
+    background: var(--brand-hover);
+  }
+  button:active {
+    transform: scale(0.99);
   }
   .error {
     margin: 0;
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-md);
+    background: var(--danger-soft);
     color: var(--danger);
-    font-weight: 700;
+    font-weight: 550;
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  @media (max-width: 960px) {
+    .setup-shell {
+      grid-template-columns: 1fr;
+    }
+    .setup-shell :global(.atlas) {
+      position: relative;
+      height: auto;
+      min-height: 14rem;
+    }
   }
   @media (max-width: 650px) {
     .choices,

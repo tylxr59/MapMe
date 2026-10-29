@@ -150,7 +150,7 @@
   h1 {
     margin: 0;
     font-size: clamp(1.7rem, 3vw, 2.15rem);
-    letter-spacing: -0.035em;
+    letter-spacing: -0.012em;
   }
   .heading-actions {
     gap: 1.25rem;
@@ -175,7 +175,7 @@
   }
   button {
     border: 0;
-    font-weight: 750;
+    font-weight: 600;
   }
   .primary-button {
     min-height: 2.55rem;
@@ -278,7 +278,7 @@
   }
   .list-name {
     gap: 0.4rem;
-    font-weight: 800;
+    font-weight: 650;
   }
   .list-meta {
     color: var(--ink-muted);
@@ -300,7 +300,7 @@
     gap: 0.25rem;
     color: var(--green-800);
     font-size: 0.75rem;
-    font-weight: 750;
+    font-weight: 600;
   }
   .editor {
     border-top: 1px solid var(--line);
@@ -321,7 +321,7 @@
     color: var(--danger-text);
     cursor: pointer;
     font-size: 0.78rem;
-    font-weight: 750;
+    font-weight: 600;
   }
   .danger-content {
     margin-top: 0.75rem;

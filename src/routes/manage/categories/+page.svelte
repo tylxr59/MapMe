@@ -229,7 +229,7 @@
   h1 {
     margin: 0;
     font-size: clamp(1.7rem, 3vw, 2.15rem);
-    letter-spacing: -0.035em;
+    letter-spacing: -0.012em;
   }
   .danger-content p,
   .empty-state p {
@@ -262,7 +262,7 @@
   }
   button {
     border: 0;
-    font-weight: 750;
+    font-weight: 600;
   }
   .primary-button {
     min-height: 2.55rem;
@@ -369,7 +369,7 @@
   label > span:first-child {
     color: var(--text-secondary);
     font-size: 0.7rem;
-    font-weight: 800;
+    font-weight: 650;
   }
   input,
   select {
@@ -465,7 +465,7 @@
     align-items: center;
     gap: 0.45rem;
     font-size: 0.95rem;
-    font-weight: 800;
+    font-weight: 650;
   }
   .category-meta {
     display: flex;
@@ -483,7 +483,7 @@
     color: var(--badge-text);
     padding: 0.2rem 0.42rem;
     font-size: 0.62rem;
-    font-weight: 800;
+    font-weight: 650;
   }
   .edit-affordance {
     display: inline-flex;
@@ -492,7 +492,7 @@
     border-radius: 0.5rem;
     color: var(--text-secondary);
     font-size: 0.75rem;
-    font-weight: 750;
+    font-weight: 600;
   }
   .edit-affordance :global(svg:last-child) {
     margin-left: 0.2rem;
@@ -533,7 +533,7 @@
     color: var(--danger);
     cursor: pointer;
     font-size: 0.73rem;
-    font-weight: 750;
+    font-weight: 600;
     list-style: none;
   }
   .danger-content {

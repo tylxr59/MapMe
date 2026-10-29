@@ -1,6 +1,15 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation';
-  import { LoaderCircle, LogOut, MapPinned, Menu, Plus, Settings2 } from '@lucide/svelte';
+  import {
+    LoaderCircle,
+    LogOut,
+    MousePointerClick,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Plus,
+    Settings2
+  } from '@lucide/svelte';
+  import BrandMark from '$lib/components/brand/BrandMark.svelte';
   import FilterBar from '$lib/components/filters/FilterBar.svelte';
   import PlaceMap from '$lib/components/map/PlaceMap.svelte';
   import PlaceDetails from '$lib/components/places/PlaceDetails.svelte';
@@ -26,6 +35,9 @@
   let panelOpen = $derived(
     (editorOpen && Boolean(draft)) || Boolean(selectedPlace) || loadingDetail
   );
+
+  const addingPlace = $derived(editorOpen && Boolean(draft) && !editing);
+  const visibleCount = $derived(data.places.length);
 
   const mapPlaces = $derived(
     data.places.map((place): MapPlace => ({
@@ -161,20 +173,21 @@
   <main class:collapsed={sidebarCollapsed} class:drawer-open={mobileSidebarOpen}>
     <aside class="sidebar" aria-label="Places sidebar">
       <header class="sidebar-header">
+        <a class="brand" href="/">
+          <BrandMark size={34} />
+          <span class="wordmark">MapMe</span>
+        </a>
         <button
-          class="menu-button"
+          class="icon-button"
           type="button"
           onclick={toggleSidebar}
           aria-label="Collapse sidebar"
+          title="Collapse sidebar"
           aria-expanded="true"
           aria-controls="places-sidebar-content"
         >
-          <Menu size={21} />
+          <PanelLeftClose size={19} />
         </button>
-        <a class="brand" href="/">
-          <span class="brand-icon"><MapPinned size={20} /></span>
-          <strong>MapMe</strong>
-        </a>
       </header>
       <div class="sidebar-content" id="places-sidebar-content">
         <FilterBar filters={data.filters} categories={data.categories} lists={data.lists} />
@@ -182,52 +195,56 @@
       </div>
       <footer class="sidebar-footer">
         <a class="settings" href="/manage/general">
-          <Settings2 size={18} />
+          <Settings2 size={17} />
           <span>Settings</span>
         </a>
         {#if data.config.authMode === 'password'}
           <form method="POST" action="/logout">
-            <button type="submit"><LogOut size={18} /><span>Sign out</span></button>
+            <button type="submit"><LogOut size={17} /><span>Sign out</span></button>
           </form>
         {/if}
+        <span class="version">v{data.config.appVersion}</span>
       </footer>
     </aside>
 
     {#if sidebarCollapsed}
       <header class="floating-header desktop-launcher">
         <button
-          class="menu-button"
+          class="icon-button"
           type="button"
           onclick={toggleSidebar}
           aria-label="Open sidebar"
+          title="Open sidebar"
           aria-expanded="false"
           aria-controls="places-sidebar-content"
         >
-          <Menu size={21} />
+          <PanelLeftOpen size={19} />
         </button>
         <a class="brand" href="/">
-          <span class="brand-icon"><MapPinned size={20} /></span>
-          <strong>MapMe</strong>
+          <BrandMark size={28} />
+          <span class="wordmark">MapMe</span>
         </a>
+        <span class="launcher-count">{visibleCount}</span>
       </header>
     {/if}
 
     {#if !mobileSidebarOpen}
       <header class="floating-header mobile-launcher">
         <button
-          class="menu-button"
+          class="icon-button"
           type="button"
           onclick={toggleSidebar}
           aria-label="Open sidebar"
           aria-expanded="false"
           aria-controls="places-sidebar-content"
         >
-          <Menu size={21} />
+          <PanelLeftOpen size={19} />
         </button>
         <a class="brand" href="/">
-          <span class="brand-icon"><MapPinned size={20} /></span>
-          <strong>MapMe</strong>
+          <BrandMark size={28} />
+          <span class="wordmark">MapMe</span>
         </a>
+        <span class="launcher-count">{visibleCount} {visibleCount === 1 ? 'place' : 'places'}</span>
       </header>
     {/if}
 
@@ -253,16 +270,29 @@
         onmapclick={mapClicked}
         onviewportchange={(coordinates) => (mapCenter = coordinates)}
       />
-      <div class="map-hint">Click the map to add a place</div>
-      <button
-        class="add"
-        type="button"
-        onclick={startAddAtCurrentLocation}
-        disabled={locating}
-        aria-busy={locating}
-        >{#if locating}<LoaderCircle class="spin" size={20} /> Locating…{:else}<Plus size={21} /> Add
-          place{/if}</button
-      >
+      <div class="map-hint" class:drafting={addingPlace}>
+        <MousePointerClick size={14} />
+        {#if addingPlace}
+          Click the map or drag the pin to move it
+        {:else}
+          Click the map to add a place
+        {/if}
+      </div>
+      {#if !panelOpen}
+        <button
+          class="add"
+          type="button"
+          onclick={startAddAtCurrentLocation}
+          disabled={locating}
+          aria-busy={locating}
+        >
+          {#if locating}
+            <LoaderCircle class="spin" size={19} /> <span>Locating…</span>
+          {:else}
+            <Plus size={20} strokeWidth={2.5} /> <span>Add place</span>
+          {/if}
+        </button>
+      {/if}
     </section>
     {#if editorOpen && draft}
       <aside class="panel">
@@ -279,120 +309,108 @@
       </aside>
     {:else if selectedPlace}
       <aside class="panel">
-        <PlaceDetails
-          place={selectedPlace}
-          onedit={() => {
-            editing = true;
-            editorOpen = true;
-            draft = { latitude: selectedPlace!.latitude, longitude: selectedPlace!.longitude };
-          }}
-          onclose={() => ((selectedPlace = null), (selectedId = null))}
-          ondeleted={deleted}
-          onchanged={changed}
-        />
+        {#key selectedPlace.id}
+          <PlaceDetails
+            place={selectedPlace}
+            onedit={() => {
+              editing = true;
+              editorOpen = true;
+              draft = { latitude: selectedPlace!.latitude, longitude: selectedPlace!.longitude };
+            }}
+            onclose={() => ((selectedPlace = null), (selectedId = null))}
+            ondeleted={deleted}
+            onchanged={changed}
+          />
+        {/key}
       </aside>
     {:else if loadingDetail}
-      <aside class="panel loading">Loading place…</aside>
+      <aside class="panel loading" aria-busy="true">
+        <div class="skeleton">
+          <span class="sk sk-hero"></span>
+          <span class="sk sk-title"></span>
+          <span class="sk sk-line"></span>
+          <span class="sk sk-actions"></span>
+          <span class="sk sk-card"></span>
+        </div>
+        <span class="sr-only">Loading place…</span>
+      </aside>
     {/if}
   </main>
 
-  {#if form?.message}<div class="toast error" role="alert">{form.message}</div>{/if}
-  {#if locationNotice}<div class="toast" role="status">{locationNotice}</div>{/if}
+  <div class="toasts" aria-live="polite">
+    {#if form?.message}<div class="toast error" role="alert">{form.message}</div>{/if}
+    {#if locationNotice}<div class="toast" role="status">{locationNotice}</div>{/if}
+  </div>
 </div>
 
 <style>
   .app-shell {
     height: 100dvh;
     overflow: hidden;
+    background: var(--paper);
   }
   main {
-    --panel-width: min(430px, 42vw);
+    --sidebar-width: 384px;
+    --panel-width: min(440px, 42vw);
     position: relative;
     height: 100%;
     min-height: 0;
     display: grid;
-    grid-template-columns: 380px minmax(0, 1fr);
-    transition: grid-template-columns 220ms ease;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    transition: grid-template-columns 280ms var(--ease-out);
   }
   main.collapsed {
     grid-template-columns: 0 minmax(0, 1fr);
   }
+
+  /* Shared header chrome ---------------------------------------------------------------- */
   .sidebar-header,
   .floating-header {
-    min-height: 3.75rem;
     display: flex;
     align-items: center;
-    gap: 0.55rem;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--line);
+    gap: 0.6rem;
     background: var(--cream);
-    box-shadow: 0 1px 10px var(--shadow-soft);
   }
-  .menu-button {
-    width: 2.6rem;
-    height: 2.6rem;
+  .sidebar-header {
+    min-height: 4rem;
+    justify-content: space-between;
+    padding: 0.9rem 0.75rem 0.4rem 1.1rem;
+  }
+  .icon-button {
+    width: 2.4rem;
+    height: 2.4rem;
     display: grid;
     flex: 0 0 auto;
     place-items: center;
     border: 0;
-    border-radius: 0.7rem;
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--ink-muted);
+    transition:
+      background 120ms ease,
+      color 120ms ease;
   }
-  .menu-button:hover {
+  .icon-button:hover {
     background: var(--surface-muted);
-    color: var(--green-800);
+    color: var(--text);
   }
   .brand {
     display: flex;
     align-items: center;
-    gap: 0.55rem;
-    color: var(--green-800);
+    gap: 0.6rem;
+    color: var(--text);
     text-decoration: none;
   }
-  .brand-icon {
-    width: 2rem;
-    height: 2rem;
-    display: grid;
-    place-items: center;
-    border-radius: 0.65rem;
-    background: var(--accent-bg);
-    color: var(--accent-text);
+  .wordmark {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 600;
+    font-variation-settings: 'opsz' 72;
+    letter-spacing: -0.012em;
+    line-height: 1;
   }
-  .brand strong {
-    color: var(--green-900);
-    font-size: 1.05rem;
-  }
-  .add {
-    position: absolute;
-    z-index: 600;
-    right: 1.25rem;
-    bottom: 2.15rem;
-    min-height: 3.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    border: 0;
-    border-radius: 999px;
-    background: var(--accent-bg);
-    color: var(--accent-text);
-    padding: 0.75rem 1.05rem;
-    font-weight: 780;
-    box-shadow: 0 8px 24px #102a1d40;
-  }
-  .add:hover {
-    background: var(--green-700);
-    transform: translateY(-1px);
-    box-shadow: 0 10px 28px #102a1d4d;
-  }
-  .add:disabled {
-    cursor: wait;
-    opacity: 0.78;
-    transform: none;
-  }
-  .add :global(.spin) {
-    animation: spin 0.85s linear infinite;
-  }
+
+  /* Sidebar ---------------------------------------------------------------------------- */
   .sidebar {
     position: relative;
     z-index: 1000;
@@ -400,11 +418,11 @@
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--line);
-    background: var(--cream);
+    background: var(--cream) var(--grain);
     overflow: hidden;
     transition:
-      transform 220ms ease,
-      visibility 220ms;
+      transform 280ms var(--ease-out),
+      visibility 280ms;
   }
   main.collapsed .sidebar {
     visibility: hidden;
@@ -416,56 +434,74 @@
     flex: 1;
     flex-direction: column;
   }
-  .sidebar-content :global(.place-list) {
-    flex: 1;
-  }
   .sidebar-footer {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.7rem;
+    gap: 0.25rem;
+    padding: 0.55rem 0.6rem;
     border-top: 1px solid var(--line);
-    background: var(--cream);
   }
   .sidebar-footer a,
   .sidebar-footer button {
-    min-height: 2.7rem;
+    min-height: 2.4rem;
     display: flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: 0.5rem;
     border: 0;
-    border-radius: 0.7rem;
-    padding: 0.65rem 0.75rem;
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.7rem;
     background: transparent;
     color: var(--text-secondary);
     text-decoration: none;
-    font-size: 0.82rem;
-    font-weight: 750;
+    font-size: 0.84rem;
+    font-weight: 550;
+    transition:
+      background 120ms ease,
+      color 120ms ease;
   }
   .sidebar-footer a:hover,
   .sidebar-footer button:hover {
     background: var(--surface-muted);
-    color: var(--green-800);
-  }
-  .sidebar-footer .settings {
-    flex: 1;
+    color: var(--text);
   }
   .sidebar-footer form {
     margin: 0;
   }
+  .version {
+    margin-left: auto;
+    padding-right: 0.5rem;
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+  }
+
+  /* Floating launchers (collapsed sidebar / mobile) -------------------------------------- */
   .floating-header {
     position: absolute;
     z-index: 800;
-    top: 0.75rem;
-    left: 0.75rem;
-    min-height: auto;
+    top: 1rem;
+    left: 1rem;
     border: 1px solid var(--line);
-    border-radius: 0.85rem;
-    padding: 0.35rem;
-    box-shadow: 0 8px 24px var(--shadow-panel);
+    border-radius: var(--radius-lg);
+    padding: 0.3rem 0.85rem 0.3rem 0.3rem;
+    background: color-mix(in srgb, var(--cream) 92%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+    box-shadow: var(--shadow-float);
+    animation: float-in 320ms var(--ease-out);
   }
-  .floating-header .brand {
-    padding-right: 0.55rem;
+  .floating-header .wordmark {
+    font-size: 1.2rem;
+  }
+  .launcher-count {
+    min-width: 1.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
   }
   .mobile-launcher {
     display: none;
@@ -473,13 +509,15 @@
   .sidebar-backdrop {
     display: none;
   }
+
+  /* Map ------------------------------------------------------------------------------------ */
   .map-pane {
     position: relative;
     z-index: 0;
     isolation: isolate;
     min-width: 0;
     min-height: 0;
-    transition: margin-right 220ms ease;
+    transition: margin-right 300ms var(--ease-out);
   }
   .map-pane.panel-open {
     margin-right: var(--panel-width);
@@ -488,17 +526,68 @@
     position: absolute;
     z-index: 500;
     left: 50%;
-    bottom: 1.25rem;
+    bottom: 1.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
     transform: translateX(-50%);
-    border: 1px solid #ffffffbb;
     border-radius: 999px;
-    background: #183d2bd9;
-    color: white;
-    padding: 0.48rem 0.75rem;
-    font-size: 0.74rem;
+    background: color-mix(in srgb, var(--text) 82%, transparent);
+    backdrop-filter: blur(8px);
+    color: var(--paper);
+    padding: 0.5rem 0.9rem 0.5rem 0.75rem;
+    font-size: 0.76rem;
+    font-weight: 500;
+    white-space: nowrap;
     pointer-events: none;
-    box-shadow: 0 4px 16px #12302033;
+    box-shadow: 0 8px 20px -6px #0000004d;
+    transition: background 200ms ease;
   }
+  .map-hint.drafting {
+    background: var(--vermilion);
+    color: white;
+  }
+  .add {
+    position: absolute;
+    z-index: 600;
+    right: 1.25rem;
+    bottom: 1.5rem;
+    min-height: 3.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--brand);
+    color: var(--accent-text);
+    padding: 0.8rem 1.35rem 0.8rem 1.1rem;
+    font-size: 0.95rem;
+    font-weight: 650;
+    letter-spacing: -0.005em;
+    box-shadow:
+      inset 0 1px 0 #ffffff26,
+      0 1px 2px #0000001f,
+      0 12px 28px -8px color-mix(in srgb, var(--brand) 70%, #000);
+    transition:
+      transform 200ms var(--ease-spring),
+      background 150ms ease,
+      box-shadow 200ms ease;
+    animation: float-in 320ms var(--ease-out);
+  }
+  .add:hover {
+    background: var(--brand-hover);
+    transform: translateY(-2px);
+  }
+  .add:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .add:disabled {
+    cursor: wait;
+    opacity: 0.85;
+    transform: none;
+  }
+
+  /* Detail / editor panel ------------------------------------------------------------------ */
   .panel {
     position: absolute;
     z-index: 900;
@@ -507,34 +596,117 @@
     bottom: 0;
     width: var(--panel-width);
     border-left: 1px solid var(--line);
-    box-shadow: -16px 0 38px var(--shadow-panel);
     background: var(--cream);
+    box-shadow: -24px 0 48px -24px var(--shadow-panel);
+    animation: panel-in 300ms var(--ease-out);
   }
   .panel.loading {
-    display: grid;
-    place-items: center;
-    color: var(--ink-muted);
+    overflow: hidden;
   }
-  .toast {
+  .skeleton {
+    display: grid;
+    gap: 0.9rem;
+    padding: 0 0 1rem;
+  }
+  .sk {
+    display: block;
+    margin: 0 1.25rem;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(
+      100deg,
+      var(--surface-muted) 30%,
+      color-mix(in srgb, var(--surface-muted) 40%, var(--cream)) 50%,
+      var(--surface-muted) 70%
+    );
+    background-size: 300% 100%;
+    animation: shimmer 1.2s linear infinite;
+  }
+  .sk-hero {
+    height: 9rem;
+    margin: 0;
+    border-radius: 0;
+  }
+  .sk-title {
+    width: 70%;
+    height: 1.9rem;
+  }
+  .sk-line {
+    width: 45%;
+    height: 0.9rem;
+  }
+  .sk-actions {
+    height: 3.6rem;
+  }
+  .sk-card {
+    height: 10rem;
+  }
+
+  /* Toasts --------------------------------------------------------------------------------- */
+  .toasts {
     position: fixed;
     z-index: 2000;
     left: 50%;
-    bottom: 1rem;
+    bottom: 1.25rem;
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
     transform: translateX(-50%);
-    border-radius: 0.6rem;
-    padding: 0.7rem 1rem;
-    background: #263a2d;
-    color: white;
-    box-shadow: 0 8px 30px #0003;
+    pointer-events: none;
+  }
+  .toast {
+    max-width: min(32rem, calc(100vw - 2rem));
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    background: var(--text);
+    color: var(--paper);
+    font-size: 0.86rem;
+    font-weight: 500;
+    box-shadow: 0 16px 36px -10px #00000073;
+    animation: toast-in 320ms var(--ease-spring);
   }
   .toast.error {
-    background: #8b2e29;
+    background: var(--danger);
+    color: white;
   }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
+
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
     }
   }
+  @keyframes float-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.96);
+    }
+  }
+  @keyframes shimmer {
+    to {
+      background-position: -150% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    main,
+    .sidebar,
+    .map-pane,
+    .panel,
+    .add,
+    .floating-header,
+    .toast,
+    .sk {
+      animation: none;
+      transition: none;
+    }
+  }
+
   @media (max-width: 760px) {
     main {
       display: block;
@@ -543,10 +715,11 @@
       position: fixed;
       z-index: 1100;
       inset: 0 auto 0 0;
-      width: min(380px, calc(100vw - 3rem));
+      width: min(384px, calc(100vw - 3rem));
       visibility: hidden;
       transform: translateX(-100%);
-      box-shadow: 16px 0 38px var(--shadow-panel);
+      border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+      box-shadow: 24px 0 48px -12px var(--shadow-panel);
     }
     main.collapsed .sidebar {
       visibility: hidden;
@@ -562,6 +735,8 @@
     }
     .mobile-launcher {
       display: flex;
+      top: max(0.75rem, env(safe-area-inset-top));
+      left: 0.75rem;
     }
     .sidebar-backdrop {
       position: fixed;
@@ -569,8 +744,10 @@
       inset: 0;
       display: block;
       border: 0;
-      background: #07130c66;
+      background: #0b0f0d73;
+      backdrop-filter: blur(2px);
       cursor: default;
+      animation: float-in 200ms ease;
     }
     .map-pane {
       position: absolute;
@@ -590,15 +767,23 @@
       right: 0;
       bottom: 0;
       width: 100%;
-      height: min(82dvh, 760px);
+      height: min(86dvh, 780px);
       border: 1px solid var(--line);
-      border-radius: 1rem 1rem 0 0;
+      border-bottom: 0;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
       overflow: hidden;
-      box-shadow: 0 -16px 38px var(--shadow-panel);
+      box-shadow: 0 -20px 48px -12px var(--shadow-panel);
+      animation-name: sheet-in;
     }
     .add {
       right: 1rem;
-      bottom: 2rem;
+      bottom: max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem));
+    }
+    @keyframes sheet-in {
+      from {
+        transform: translateY(40px);
+        opacity: 0;
+      }
     }
   }
 </style>

@@ -87,7 +87,7 @@
   .picker-heading > span {
     color: var(--text-secondary);
     font-size: 0.7rem;
-    font-weight: 800;
+    font-weight: 650;
   }
   .picker-heading a {
     display: inline-flex;
@@ -95,7 +95,7 @@
     gap: 0.2rem;
     color: var(--green-700);
     font-size: 0.68rem;
-    font-weight: 750;
+    font-weight: 600;
     text-decoration: none;
   }
   .picker-heading a:hover {
