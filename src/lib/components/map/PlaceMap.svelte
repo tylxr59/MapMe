@@ -91,6 +91,7 @@
   function refreshMarkers() {
     if (!leaflet || !map || !cluster) return;
     cluster.clearLayers();
+    const markers: import('leaflet').Marker[] = [];
     for (const place of places) {
       const marker = leaflet.marker([place.latitude, place.longitude], {
         icon: leaflet.divIcon({
@@ -109,7 +110,7 @@
         className: 'mapme-tooltip'
       });
       marker.on('click', () => onselect(place.id));
-      cluster.addLayer(marker);
+      markers.push(marker);
       if (place.id === selectedId) {
         queueMicrotask(() =>
           map?.setView([place.latitude, place.longitude], Math.min(placeFocusZoom, tileMaxZoom), {
@@ -118,6 +119,7 @@
         );
       }
     }
+    cluster.addLayers(markers);
   }
 
   function refreshDraft() {
@@ -170,7 +172,6 @@
     void (async () => {
       const leafletModule = await import('leaflet');
       leaflet = leafletModule.default;
-      await import('leaflet.markercluster');
       if (destroyed) return;
       const saved = localStorage.getItem('mapme.viewport');
       let center: [number, number] = [39.5, -98.35];
@@ -212,6 +213,9 @@
       }, 8_000);
       tileLayer.addTo(map);
       leaflet.control.zoom({ position: 'topright' }).addTo(map);
+      // Start visible tile requests before loading the marker clustering plugin.
+      await import('leaflet.markercluster');
+      if (destroyed) return;
       cluster = leaflet.markerClusterGroup({
         showCoverageOnHover: false,
         maxClusterRadius: 48,
@@ -268,14 +272,12 @@
         <strong>
           {initialTileState === 'slow'
             ? 'Map tiles are taking longer than expected'
-            : tileProxyEnabled
-              ? 'Starting map tile service…'
-              : 'Loading map tiles…'}
+            : 'Loading map tiles…'}
         </strong>
         {#if initialTileState === 'slow'}
           <small>MapMe will keep trying.</small>
         {:else if tileProxyEnabled}
-          <small>The first load can take a moment while the tile proxy starts.</small>
+          <small>Tiles are cached locally to speed up return visits.</small>
         {/if}
       </span>
     </div>

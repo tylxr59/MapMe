@@ -97,17 +97,12 @@ async function atomicWrite(path: string, contents: Uint8Array | string): Promise
   }
 }
 
-async function metadataFiles(directory: string): Promise<string[]> {
-  const results: string[] = [];
+async function* metadataFiles(directory: string): AsyncGenerator<string> {
   for (const entry of await readdir(directory, { withFileTypes: true }).catch(() => [])) {
     const path = join(directory, entry.name);
-    if (entry.isDirectory()) results.push(...(await metadataFiles(path)));
-    else if (entry.isFile() && entry.name.endsWith('.json')) results.push(path);
-    else if (entry.isFile() && entry.name.endsWith('.tmp')) {
-      await rm(path, { force: true }).catch(() => undefined);
-    }
+    if (entry.isDirectory()) yield* metadataFiles(path);
+    else if (entry.isFile() && entry.name.endsWith('.json')) yield path;
   }
-  return results;
 }
 
 export function parseTileCoordinates(
@@ -152,7 +147,11 @@ export class TileCache {
   private readonly entries = new Map<string, CacheEntry>();
   private readonly inFlight = new Map<string, Promise<TileResult>>();
   private initialized: Promise<void> | null = null;
+  private readonly discovered = new Set<string>();
+  private readonly diskReads = new Map<string, Promise<CacheEntry | null>>();
+  private indexed = false;
   private totalBytes = 0;
+  private eviction: Promise<void> = Promise.resolve();
 
   constructor(private readonly options: TileCacheOptions) {
     this.fetcher = options.fetcher ?? fetch;
@@ -173,38 +172,66 @@ export class TileCache {
     return { tilePath: `${base}.tile`, metadataPath: `${base}.json` };
   }
 
-  private async initialize(): Promise<void> {
+  // Index the cache for eviction in the background. Requested tiles are loaded
+  // directly by path, so a large cache on slow storage never gates the map.
+  initialize(): Promise<void> {
+    this.initialized ??= this.index().catch((error) => {
+      console.warn('Could not index the tile cache', error);
+    });
+    return this.initialized;
+  }
+
+  private async index(): Promise<void> {
     await mkdir(this.options.directory, { recursive: true, mode: 0o700 });
-    for (const metadataPath of await metadataFiles(this.options.directory)) {
-      const tilePath = metadataPath.replace(/\.json$/, '.tile');
-      try {
-        const metadata = JSON.parse(await readFile(metadataPath, 'utf8')) as unknown;
-        const tileInfo = await stat(tilePath);
-        if (!isTileMetadata(metadata) || tileInfo.size !== metadata.size) throw new Error();
-        const key = metadataPath
-          .slice(this.options.directory.length + 1, -'.json'.length)
-          .split('\\')
-          .join('/');
-        this.entries.set(key, {
-          tilePath,
-          metadataPath,
-          metadata,
-          lastAccessedAt: tileInfo.mtimeMs
-        });
-        this.totalBytes += metadata.size;
-      } catch {
-        await Promise.all([
-          rm(tilePath, { force: true }).catch(() => undefined),
-          rm(metadataPath, { force: true }).catch(() => undefined)
-        ]);
-      }
+    for await (const metadataPath of metadataFiles(this.options.directory)) {
+      const key = metadataPath
+        .slice(this.options.directory.length + 1, -'.json'.length)
+        .split('\\')
+        .join('/');
+      await this.loadEntry(key, {
+        metadataPath,
+        tilePath: metadataPath.replace(/\.json$/, '.tile')
+      });
     }
+    this.indexed = true;
+    this.discovered.clear();
     await this.enforceLimit();
   }
 
-  private async ready(): Promise<void> {
-    this.initialized ??= this.initialize();
-    await this.initialized;
+  private async loadEntry(
+    key: string,
+    paths: { tilePath: string; metadataPath: string }
+  ): Promise<CacheEntry | null> {
+    const pending = this.diskReads.get(key);
+    if (pending) return pending;
+    if (this.indexed || this.discovered.has(key)) return this.entries.get(key) ?? null;
+    this.discovered.add(key);
+    const operation = (async () => {
+      try {
+        const [contents, tileInfo] = await Promise.all([
+          readFile(paths.metadataPath, 'utf8'),
+          stat(paths.tilePath)
+        ]);
+        const metadata: unknown = JSON.parse(contents);
+        if (!isTileMetadata(metadata) || tileInfo.size !== metadata.size) throw new Error();
+        const entry = { ...paths, metadata, lastAccessedAt: tileInfo.mtimeMs };
+        this.entries.set(key, entry);
+        this.totalBytes += metadata.size;
+        return entry;
+      } catch {
+        await Promise.all([
+          rm(paths.tilePath, { force: true }).catch(() => undefined),
+          rm(paths.metadataPath, { force: true }).catch(() => undefined)
+        ]);
+        return null;
+      }
+    })();
+    this.diskReads.set(key, operation);
+    try {
+      return await operation;
+    } finally {
+      this.diskReads.delete(key);
+    }
   }
 
   private result(
@@ -346,13 +373,20 @@ export class TileCache {
     return this.result(bytes, metadata, 'miss');
   }
 
-  private async enforceLimit(): Promise<void> {
-    if (this.totalBytes <= this.options.maximumBytes) return;
+  private enforceLimit(): Promise<void> {
+    const operation = this.eviction.then(() => this.evict());
+    this.eviction = operation.catch(() => undefined);
+    return operation;
+  }
+
+  private async evict(): Promise<void> {
+    if (!this.indexed || this.totalBytes <= this.options.maximumBytes) return;
     const oldestFirst = [...this.entries.entries()].sort(
       ([, first], [, second]) => first.lastAccessedAt - second.lastAccessedAt
     );
     for (const [key, entry] of oldestFirst) {
       if (this.totalBytes <= this.options.maximumBytes) break;
+      if (this.inFlight.has(key)) continue;
       this.entries.delete(key);
       this.totalBytes = Math.max(0, this.totalBytes - entry.metadata.size);
       await Promise.all([
@@ -363,13 +397,13 @@ export class TileCache {
   }
 
   async get(coordinates: TileCoordinates, referer: string): Promise<TileResult> {
-    await this.ready();
+    void this.initialize();
     const key = this.key(coordinates);
     const existingRequest = this.inFlight.get(key);
     if (existingRequest) return existingRequest;
 
     const operation = (async () => {
-      let entry = this.entries.get(key) ?? null;
+      let entry = await this.loadEntry(key, this.paths(coordinates));
       if (entry) {
         const bytes = await this.read(key, entry);
         if (!bytes) entry = null;
@@ -384,6 +418,7 @@ export class TileCache {
       return await operation;
     } finally {
       this.inFlight.delete(key);
+      await this.enforceLimit();
     }
   }
 }

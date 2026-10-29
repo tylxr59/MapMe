@@ -1,10 +1,22 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { originOnlyReferer, parseTileCoordinates, TileCache } from '#lib/server/tiles/cache.js';
 
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>();
+  return { ...actual, readdir: vi.fn(actual.readdir) };
+});
+
 const temporaryDirectories: string[] = [];
+const activeCaches: TileCache[] = [];
+
+function createCache(options: ConstructorParameters<typeof TileCache>[0]): TileCache {
+  const cache = new TileCache(options);
+  activeCaches.push(cache);
+  return cache;
+}
 
 async function temporaryDirectory(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'mapme-tiles-'));
@@ -13,6 +25,8 @@ async function temporaryDirectory(): Promise<string> {
 }
 
 afterEach(async () => {
+  await Promise.all(activeCaches.splice(0).map((cache) => cache.initialize()));
+  vi.mocked(readdir).mockClear();
   await Promise.all(
     temporaryDirectories
       .splice(0)
@@ -62,7 +76,7 @@ describe('persistent tile cache', () => {
       fetcher
     };
 
-    const firstCache = new TileCache(options);
+    const firstCache = createCache(options);
     expect((await firstCache.get({ z: 2, x: 1, y: 2 }, 'http://mapme.test/')).cacheStatus).toBe(
       'miss'
     );
@@ -75,11 +89,83 @@ describe('persistent tile cache', () => {
     expect(headers.get('user-agent')).toBe('MapMe/test');
     expect(headers.get('referer')).toBe('http://mapme.test/');
 
-    const secondCache = new TileCache({ ...options, fetcher: vi.fn<typeof fetch>() });
+    const secondCache = createCache({ ...options, fetcher: vi.fn<typeof fetch>() });
     const persisted = await secondCache.get({ z: 2, x: 1, y: 2 }, 'http://mapme.test/');
     expect(persisted.cacheStatus).toBe('hit');
     expect([...persisted.bytes]).toEqual([1, 2, 3]);
     expect(JSON.parse(await readFile(join(directory, '2/1/2.json'), 'utf8')).etag).toBe('"tile-1"');
+  });
+
+  it('serves cached and uncached tiles while the startup directory scan is blocked', async () => {
+    const directory = await temporaryDirectory();
+    const options = {
+      directory,
+      maximumBytes: 64 * 1024 * 1024,
+      upstreamTemplate: 'https://tiles.test/{z}/{x}/{y}.png',
+      userAgent: 'MapMe/test',
+      fetcher: vi.fn<typeof fetch>().mockImplementation(
+        async () =>
+          new Response(Uint8Array.from([1, 2, 3]), {
+            headers: { 'cache-control': 'max-age=3600', 'content-type': 'image/png' }
+          })
+      )
+    };
+    const previousCache = createCache(options);
+    await previousCache.get({ z: 2, x: 1, y: 2 }, 'http://mapme.test/');
+    await previousCache.initialize();
+    options.fetcher.mockClear();
+
+    const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
+    let releaseScan!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      releaseScan = resolve;
+    });
+    vi.mocked(readdir).mockImplementationOnce(async (...args) => {
+      await gate;
+      return actual.readdir(...args);
+    });
+    const cache = createCache(options);
+    let completed = false;
+    const requests = Promise.all([
+      cache.get({ z: 2, x: 1, y: 2 }, 'http://mapme.test/'),
+      cache.get({ z: 2, x: 2, y: 2 }, 'http://mapme.test/')
+    ]).then((results) => {
+      completed = true;
+      return results;
+    });
+    try {
+      await vi.waitFor(() => expect(completed).toBe(true));
+      expect((await requests).map((result) => result.cacheStatus)).toEqual(['hit', 'miss']);
+      expect(options.fetcher).toHaveBeenCalledTimes(1);
+    } finally {
+      releaseScan();
+      await cache.initialize();
+      await requests;
+    }
+    // The background index must not count newly fetched tiles twice or delete them.
+    expect((await cache.get({ z: 2, x: 2, y: 2 }, 'http://mapme.test/')).cacheStatus).toBe('hit');
+  });
+
+  it('shares concurrent requests for the same tile', async () => {
+    const directory = await temporaryDirectory();
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(
+      async () =>
+        new Response(Uint8Array.from([1, 2, 3]), {
+          headers: { 'cache-control': 'max-age=3600', 'content-type': 'image/png' }
+        })
+    );
+    const cache = createCache({
+      directory,
+      maximumBytes: 1024,
+      upstreamTemplate: 'https://tiles.test/{z}/{x}/{y}.png',
+      userAgent: 'MapMe/test',
+      fetcher
+    });
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => cache.get({ z: 2, x: 1, y: 2 }, 'http://mapme.test/'))
+    );
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(results.every((result) => result.cacheStatus === 'miss')).toBe(true);
   });
 
   it('conditionally revalidates expired tiles and serves stale data on an outage', async () => {
@@ -106,7 +192,7 @@ describe('persistent tile cache', () => {
       }
       throw new Error('offline');
     });
-    const cache = new TileCache({
+    const cache = createCache({
       directory,
       maximumBytes: 64 * 1024 * 1024,
       upstreamTemplate: 'https://tiles.test/{z}/{x}/{y}.png',
@@ -123,6 +209,45 @@ describe('persistent tile cache', () => {
     expect([...stale.bytes]).toEqual([4, 5, 6]);
   });
 
+  it('enforces the disk limit after indexing and after concurrent writes', async () => {
+    const directory = await temporaryDirectory();
+    const options = {
+      directory,
+      maximumBytes: 100,
+      upstreamTemplate: 'https://tiles.test/{z}/{x}/{y}.png',
+      userAgent: 'MapMe/test',
+      fetcher: vi.fn<typeof fetch>().mockImplementation(
+        async () =>
+          new Response(Uint8Array.from([1, 2, 3]), {
+            headers: { 'cache-control': 'max-age=3600', 'content-type': 'image/png' }
+          })
+      )
+    };
+    const previousCache = createCache(options);
+    await previousCache.get({ z: 2, x: 0, y: 0 }, 'http://mapme.test/');
+    await previousCache.get({ z: 2, x: 1, y: 0 }, 'http://mapme.test/');
+    await previousCache.initialize();
+    const cache = createCache({ ...options, maximumBytes: 3 });
+    await cache.initialize();
+    const tileBytes = async () => {
+      const files = await readdir(directory, { recursive: true });
+      const tiles = files.filter((path) => path.endsWith('.tile'));
+      return (await Promise.all(tiles.map((path) => readFile(join(directory, path))))).reduce(
+        (total, bytes) => total + bytes.byteLength,
+        0
+      );
+    };
+    expect(await tileBytes()).toBe(3);
+    await Promise.all([
+      cache.get({ z: 2, x: 2, y: 0 }, 'http://mapme.test/'),
+      cache.get({ z: 2, x: 3, y: 0 }, 'http://mapme.test/')
+    ]);
+    expect(await tileBytes()).toBe(3);
+    // An evicted key can be fetched again without double-counting its old size.
+    await cache.get({ z: 2, x: 0, y: 0 }, 'http://mapme.test/');
+    expect(await tileBytes()).toBe(3);
+  });
+
   it('does not persist responses marked no-store', async () => {
     const directory = await temporaryDirectory();
     const fetcher = vi.fn<typeof fetch>().mockImplementation(
@@ -134,7 +259,7 @@ describe('persistent tile cache', () => {
           }
         })
     );
-    const cache = new TileCache({
+    const cache = createCache({
       directory,
       maximumBytes: 64 * 1024 * 1024,
       upstreamTemplate: 'https://tiles.test/{z}/{x}/{y}.png',

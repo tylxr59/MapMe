@@ -50,7 +50,7 @@ test('centers the initial map on the user location', async ({ page, context }) =
     });
 });
 
-test('explains that the tile proxy is starting during the initial map load', async ({ page }) => {
+test('shows tile loading progress during the initial map load', async ({ page }) => {
   let releaseTiles: () => void = () => {};
   const tileGate = new Promise<void>((resolve) => {
     releaseTiles = resolve;
@@ -63,12 +63,55 @@ test('explains that the tile proxy is starting during the initial map load', asy
 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const status = page.getByTestId('tile-status');
-  await expect(status).toContainText('Starting map tile service');
-  await expect(status).toContainText('tile proxy starts');
+  await expect(status).toContainText('Loading map tiles');
+  await expect(status).toContainText('cached locally');
 
   releaseTiles();
   await expect(page.locator('img.leaflet-tile').first()).toBeVisible();
   await expect(status).toBeHidden();
+});
+
+test('caches assets on demand without downloading unused routes and fonts', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) {
+      await new Promise<void>((resolve) => {
+        navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), {
+          once: true
+        });
+      });
+    }
+    await fetch('/favicon.svg');
+    await fetch('/api/places');
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const names = (await caches.keys()).filter((name) => name.startsWith('mapme-assets-'));
+        const requests = (
+          await Promise.all(names.map(async (name) => (await caches.open(name)).keys()))
+        ).flat();
+        return requests.map((request) => new URL(request.url).pathname);
+      })
+    )
+    .toContain('/favicon.svg');
+
+  const cacheState = await page.evaluate(async () => {
+    const requested = new Set(performance.getEntriesByType('resource').map((entry) => entry.name));
+    const names = (await caches.keys()).filter((name) => name.startsWith('mapme-assets-'));
+    const requests = (
+      await Promise.all(names.map(async (name) => (await caches.open(name)).keys()))
+    ).flat();
+    return {
+      unused: requests
+        .filter((request) => !requested.has(request.url))
+        .map((request) => request.url),
+      privateData: requests.filter((request) => new URL(request.url).pathname.startsWith('/api/'))
+        .length
+    };
+  });
+  expect(cacheState).toEqual({ unused: [], privateData: 0 });
 });
 
 test('routes tile requests through the same-origin proxy', async ({ page }) => {
