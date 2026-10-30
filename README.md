@@ -54,9 +54,13 @@ One container and one persistent directory are enough.
 | 🔐 **Flexible access**    | Use one shared password, a trusted authentication proxy, or no sign-in on a private network.        |
 | 📱 **Installable PWA**    | Add MapMe to a desktop or mobile home screen, with automatic light and dark themes.                 |
 
-## 🚀 Quick start
+## 📋 Requirements
 
-MapMe requires Docker and a directory for persistent application data.
+- Docker on a `linux/amd64` or `linux/arm64` host.
+- A directory for persistent application data, mounted at `/data`.
+- Node.js 24 to develop or build locally.
+
+## 🚀 Quick start
 
 ```sh
 docker run -d \
@@ -205,6 +209,16 @@ The previous database and uploads are retained under `/data/backups/rollback-*`.
 Released images support `linux/amd64` and `linux/arm64`. Each release is tested, includes an SBOM
 and build provenance, and is published to the
 [GitHub Container Registry](https://github.com/tylxr59/MapMe/pkgs/container/mapme).
+
+## 🩺 Troubleshooting
+
+| Symptom                                   | Fix                                                                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Not sure whether MapMe is running         | Check `curl http://localhost:3000/healthz` and `docker logs mapme`.                                    |
+| Large backup restores fail behind a proxy | Raise the proxy's upload limit. See [Nginx Proxy Manager](#nginx-proxy-manager).                       |
+| The UI won't start after database damage  | Restore a backup from a temporary container. See [Data and backups](#-data-and-backups).               |
+| Address search returns nothing            | Geocoding may be disabled or rate limited. Coordinates, map clicks, and manual addresses still work.   |
+| Everyone was signed out                   | Changing access credentials under **Settings → General** invalidates existing sessions. Sign in again. |
 
 ## 👋 Development
 
