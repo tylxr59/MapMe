@@ -18,4 +18,4 @@ changelog:
         - dependencies
     - title: Other changes
       labels:
-        - "*"
+        - '*'
