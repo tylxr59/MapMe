@@ -12,20 +12,18 @@
   <a href="https://github.com/tylxr59/MapMe/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/tylxr59/MapMe/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/tylxr59/MapMe/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/tylxr59/MapMe?display_name=tag&sort=semver"></a>
   <a href="https://github.com/tylxr59/MapMe/pkgs/container/mapme"><img alt="Container image" src="https://img.shields.io/badge/GHCR-linux%2Famd64%20%7C%20linux%2Farm64-26734c?logo=docker&logoColor=white"></a>
-  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/tylxr59/MapMe"></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-97ca00"></a>
 </p>
 
 <p align="center">
-  <a href="#-quick-start">Quick start</a> ·
   <a href="#-features">Features</a> ·
+  <a href="#-quick-start">Quick start</a> ·
   <a href="#-unraid">Unraid</a> ·
   <a href="#-reverse-proxy">Reverse proxy</a> ·
   <a href="#-data-and-backups">Data and backups</a>
 </p>
 
 ---
-
-## 🗺️ MapMe
 
 MapMe is a focused place-bookmarking app with a map at its center. Save a restaurant, trailhead,
 shooting range, urbex site, scenic pull-off, or anywhere else worth finding again. Add context,
