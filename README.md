@@ -16,8 +16,8 @@
 </p>
 
 <p align="center">
-  <a href="#-quick-start">Quick start</a> ·
   <a href="#-features">Features</a> ·
+  <a href="#-quick-start">Quick start</a> ·
   <a href="#-unraid">Unraid</a> ·
   <a href="#-reverse-proxy">Reverse proxy</a> ·
   <a href="#-data-and-backups">Data and backups</a>
