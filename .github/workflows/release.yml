@@ -27,7 +27,9 @@ jobs:
           cache: npm
       - run: npm ci --include=optional
       - name: Validate version tag
+        id: version
         run: |
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           node -e "const p=require('./package.json'); const tag=process.env.GITHUB_REF_NAME.slice(1); if (p.version !== tag) throw new Error('package.json version '+p.version+' does not match '+tag)"
       - run: npm run format:check
       - run: npm run lint
@@ -92,5 +94,6 @@ jobs:
           done
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64
         with:
+          name: MapMe ${{ steps.version.outputs.version }}
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}
