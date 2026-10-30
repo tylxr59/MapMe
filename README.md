@@ -41,7 +41,7 @@ One container and one persistent directory are enough.
 
 ## 🎯 Features
 
-| Feature | What it does |
+| Feature                   | What it does                                                                                        |
 | ------------------------- | --------------------------------------------------------------------------------------------------- |
 | 🗺️ **Map-first library**  | Browse clustered markers alongside a searchable, filterable place list.                             |
 | 📍 **Rich place details** | Store coordinates, address, status, rating, visit date, notes, source link, and photos.             |
