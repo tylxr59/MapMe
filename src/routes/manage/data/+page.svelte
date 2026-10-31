@@ -1,7 +1,7 @@
 <script lang="ts">
   import { refreshAll } from '$app/navigation';
   import {
-    ArchiveRestore,
+    ArchiveArrowUp,
     DatabaseBackup,
     Download,
     FileJson,
@@ -288,7 +288,7 @@
 </section>
 
 <section class="card wide danger-zone">
-  <ArchiveRestore size={22} />
+  <ArchiveArrowUp size={22} />
   <h2>Restore a backup</h2>
   <p>
     Inspection is non-destructive. Confirmation creates a rollback backup and requires one
