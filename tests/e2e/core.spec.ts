@@ -82,8 +82,9 @@ test('caches assets on demand without downloading unused routes and fonts', asyn
         });
       });
     }
-    await fetch('/favicon.svg');
-    await fetch('/api/places');
+    // Read the bodies so the resource timing entries are recorded before the checks below.
+    await (await fetch('/favicon.svg')).text();
+    await (await fetch('/api/places')).text();
   });
   await expect
     .poll(() =>
@@ -97,21 +98,27 @@ test('caches assets on demand without downloading unused routes and fonts', asyn
     )
     .toContain('/favicon.svg');
 
-  const cacheState = await page.evaluate(async () => {
-    const requested = new Set(performance.getEntriesByType('resource').map((entry) => entry.name));
-    const names = (await caches.keys()).filter((name) => name.startsWith('mapme-assets-'));
-    const requests = (
-      await Promise.all(names.map(async (name) => (await caches.open(name)).keys()))
-    ).flat();
-    return {
-      unused: requests
-        .filter((request) => !requested.has(request.url))
-        .map((request) => request.url),
-      privateData: requests.filter((request) => new URL(request.url).pathname.startsWith('/api/'))
-        .length
-    };
-  });
-  expect(cacheState).toEqual({ unused: [], privateData: 0 });
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const requested = new Set(
+          performance.getEntriesByType('resource').map((entry) => entry.name)
+        );
+        const names = (await caches.keys()).filter((name) => name.startsWith('mapme-assets-'));
+        const requests = (
+          await Promise.all(names.map(async (name) => (await caches.open(name)).keys()))
+        ).flat();
+        return {
+          unused: requests
+            .filter((request) => !requested.has(request.url))
+            .map((request) => request.url),
+          privateData: requests.filter((request) =>
+            new URL(request.url).pathname.startsWith('/api/')
+          ).length
+        };
+      })
+    )
+    .toEqual({ unused: [], privateData: 0 });
 });
 
 test('routes tile requests through the same-origin proxy', async ({ page }) => {
