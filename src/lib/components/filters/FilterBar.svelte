@@ -95,8 +95,10 @@
         class="clear-query"
         href={href({ query: '' })}
         aria-label="Clear search"
-        data-sveltekit-reset="false"><X size={15} /></a
+        data-sveltekit-reset="false"
       >
+        <X size={15} />
+      </a>
     {/if}
     <button
       class="filter-toggle"
@@ -117,23 +119,28 @@
       class="chip"
       href={href({ listIds: [], favorite: false })}
       aria-current={!filters.listIds.length && filters.favorite !== true ? 'true' : undefined}
-      data-sveltekit-reset="false">All</a
+      data-sveltekit-reset="false"
     >
+      All
+    </a>
     <a
       class="chip favorite"
       href={href({ favorite: filters.favorite !== true })}
       aria-current={filters.favorite === true ? 'true' : undefined}
       data-sveltekit-reset="false"
-      ><Heart size={13} fill={filters.favorite === true ? 'currentColor' : 'none'} /> Favorites</a
     >
+      <Heart size={13} fill={filters.favorite === true ? 'currentColor' : 'none'} /> Favorites
+    </a>
     {#each lists as list (list.id)}
       {@const active = filters.listIds.includes(list.id)}
       <a
         class="chip"
         href={href({ listIds: active ? [] : [list.id] })}
         aria-current={active ? 'true' : undefined}
-        data-sveltekit-reset="false">{list.name}</a
+        data-sveltekit-reset="false"
       >
+        {list.name}
+      </a>
     {/each}
   </nav>
 
@@ -179,8 +186,10 @@
           class="chip"
           href={href({ archived: !filters.archived })}
           aria-current={filters.archived ? 'true' : undefined}
-          data-sveltekit-reset="false"><Archive size={13} /> Archived only</a
+          data-sveltekit-reset="false"
         >
+          <Archive size={13} /> Archived only
+        </a>
       </div>
       {#if anyActive}
         <a class="reset" href="/" data-sveltekit-reset="false"><X size={14} /> Clear all filters</a>

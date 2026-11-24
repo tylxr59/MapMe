@@ -153,9 +153,9 @@
       <span class="eyebrow">{place ? 'Update your place' : 'Pin something memorable'}</span>
       <h2>{place ? 'Edit place' : 'Add a place'}</h2>
     </div>
-    <button type="button" class="icon-button" onclick={onclose} aria-label="Close"
-      ><X size={18} /></button
-    >
+    <button type="button" class="icon-button" onclick={onclose} aria-label="Close">
+      <X size={18} />
+    </button>
   </header>
 
   <form
@@ -252,9 +252,9 @@
             {#if geocodeResults.length}
               <div class="geocode-results">
                 {#each geocodeResults as result (`${result.latitude},${result.longitude},${result.displayName}`)}
-                  <button type="button" onclick={() => chooseGeocode(result)}
-                    ><MapPin size={14} /><span>{result.displayName}</span></button
-                  >
+                  <button type="button" onclick={() => chooseGeocode(result)}>
+                    <MapPin size={14} /><span>{result.displayName}</span>
+                  </button>
                 {/each}
                 <small>Search data © OpenStreetMap contributors</small>
               </div>
@@ -263,8 +263,8 @@
         {/if}
 
         <div class="coordinate-grid">
-          <label
-            ><span class="label">Latitude</span>
+          <label>
+            <span class="label">Latitude</span>
             <input
               class="mono"
               name="latitude"
@@ -277,8 +277,8 @@
               required
             />
           </label>
-          <label
-            ><span class="label">Longitude</span>
+          <label>
+            <span class="label">Longitude</span>
             <input
               class="mono"
               name="longitude"
@@ -307,15 +307,15 @@
           {/if}
         </div>
 
-        <label
-          ><span class="label">Address</span>
+        <label>
+          <span class="label">Address</span>
           <input
             name="address"
             maxlength="500"
             bind:value={address}
             placeholder="Optional — or use the lookup above"
-          /></label
-        >
+          />
+        </label>
       </section>
 
       <section class="block two-up">
@@ -342,14 +342,14 @@
           </div>
           <span class="rating-caption">{ratingLabels[hoverRating || rating]}</span>
         </div>
-        <label
-          ><span class="label">Date visited</span>
-          <input name="dateVisited" type="date" value={place?.dateVisited ?? ''} /></label
-        >
+        <label>
+          <span class="label">Date visited</span>
+          <input name="dateVisited" type="date" value={place?.dateVisited ?? ''} />
+        </label>
       </section>
 
-      <label class="block"
-        ><span class="label">Notes</span>
+      <label class="block">
+        <span class="label">Notes</span>
         <textarea
           name="description"
           maxlength="20000"
@@ -361,9 +361,9 @@
       <section class="block links-editor">
         <div class="links-heading">
           <h3><Link2 size={14} /> Links</h3>
-          <button type="button" class="text-button" onclick={addLink}
-            ><Plus size={14} /> Add link</button
-          >
+          <button type="button" class="text-button" onclick={addLink}>
+            <Plus size={14} /> Add link
+          </button>
         </div>
         {#each links as link, index (link)}
           <div class="link-row">
@@ -384,8 +384,10 @@
               type="button"
               class="remove-link"
               onclick={() => removeLink(index)}
-              aria-label={`Remove link ${index + 1}`}><Trash2 size={15} /></button
+              aria-label={`Remove link ${index + 1}`}
             >
+              <Trash2 size={15} />
+            </button>
           </div>
         {:else}
           <p class="links-empty">Menus, bookings, trail reports — anything worth a click later.</p>

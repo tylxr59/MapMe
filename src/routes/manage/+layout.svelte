@@ -27,9 +27,9 @@
 <div class="manage-shell">
   <header class="rail">
     <div class="rail-top">
-      <a href="/" class="back" aria-label="Back to map" title="Back to map"
-        ><ArrowLeft size={19} /></a
-      >
+      <a href="/" class="back" aria-label="Back to map" title="Back to map">
+        <ArrowLeft size={19} />
+      </a>
       <a href="/" class="brand" tabindex="-1">
         <BrandMark size={30} />
         <span class="wordmark">MapMe</span>
