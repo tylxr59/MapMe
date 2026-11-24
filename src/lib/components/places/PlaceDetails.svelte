@@ -191,16 +191,17 @@
       {/if}
     </div>
     <span class="category-badge">{@html place.category.iconSvg}</span>
-    <button type="button" onclick={onclose} class="close" aria-label="Close details"
-      ><X size={18} /></button
-    >
+    <button type="button" onclick={onclose} class="close" aria-label="Close details">
+      <X size={18} />
+    </button>
   </header>
 
   <div class="body">
     <div class="title-block">
-      <span class="eyebrow"
-        >{place.category.name} <span aria-hidden="true">·</span> {place.list.name}</span
-      >
+      <span class="eyebrow">
+        {place.category.name} <span aria-hidden="true">·</span>
+        {place.list.name}
+      </span>
       <h2 title={place.name}>{place.name}</h2>
       <div class="facts">
         {#if place.rating}
@@ -233,9 +234,9 @@
         onclick={toggleFavorite}
         disabled={favoriteBusy}
       >
-        <span class="action-icon"
-          ><Heart size={18} fill={place.isFavorite ? 'currentColor' : 'none'} /></span
-        >
+        <span class="action-icon">
+          <Heart size={18} fill={place.isFavorite ? 'currentColor' : 'none'} />
+        </span>
         <span>{place.isFavorite ? 'Favorited' : 'Favorite'}</span>
       </button>
       <button type="button" class="action" onclick={copyCoords}>
@@ -305,14 +306,16 @@
           <figure>
             <img src={photo.thumbnailUrl} alt={photo.originalName} loading="lazy" />
             <figcaption>
-              <a href={photo.originalUrl} aria-label={`Download ${photo.originalName}`}
-                ><Download size={14} /></a
-              >
+              <a href={photo.originalUrl} aria-label={`Download ${photo.originalName}`}>
+                <Download size={14} />
+              </a>
               <button
                 type="button"
                 onclick={() => removePhoto(photo.id)}
-                aria-label={`Delete ${photo.originalName}`}><Trash2 size={14} /></button
+                aria-label={`Delete ${photo.originalName}`}
               >
+                <Trash2 size={14} />
+              </button>
             </figcaption>
           </figure>
         {/each}
@@ -324,13 +327,13 @@
           disabled={uploading}
         >
           <ImagePlus size={20} />
-          <span
-            >{uploading
+          <span>
+            {uploading
               ? 'Uploading…'
               : place.attachments.length
                 ? 'Add photos'
-                : 'Add a photo to remember this place'}</span
-          >
+                : 'Add a photo to remember this place'}
+          </span>
         </button>
       </div>
     </section>
@@ -344,9 +347,10 @@
         {#if deleting}
           <button type="button" class="ghost" onclick={() => (deleting = false)}>Cancel</button>
         {/if}
-        <button type="button" class="delete" class:confirm={deleting} onclick={deletePlace}
-          ><Trash2 size={15} /> {deleting ? 'Confirm delete' : 'Delete'}</button
-        >
+        <button type="button" class="delete" class:confirm={deleting} onclick={deletePlace}>
+          <Trash2 size={15} />
+          {deleting ? 'Confirm delete' : 'Delete'}
+        </button>
       </div>
     </footer>
   </div>

@@ -120,20 +120,20 @@
 
       <section class="included">
         <div>
-          <Database size={18} /><span
-            ><strong>Local by default</strong>Your places and uploads stay under
-            <code>/data</code>.</span
-          >
+          <Database size={18} /><span>
+            <strong>Local by default</strong>Your places and uploads stay under
+            <code>/data</code>.
+          </span>
         </div>
         <div>
-          <Check size={18} /><span
-            ><strong>Map included</strong>OSM tiles use MapMe's private caching proxy.</span
-          >
+          <Check size={18} /><span>
+            <strong>Map included</strong>OSM tiles use MapMe's private caching proxy.
+          </span>
         </div>
         <div>
-          <Check size={18} /><span
-            ><strong>Search included</strong>Address search is ready without an API key.</span
-          >
+          <Check size={18} /><span>
+            <strong>Search included</strong>Address search is ready without an API key.
+          </span>
         </div>
       </section>
 

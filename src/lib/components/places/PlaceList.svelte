@@ -14,10 +14,10 @@
 </script>
 
 <div class="list-heading">
-  <strong
-    ><span class="number">{places.length}</span>
-    {places.length === 1 ? 'place' : 'places'}</strong
-  >
+  <strong>
+    <span class="number">{places.length}</span>
+    {places.length === 1 ? 'place' : 'places'}
+  </strong>
   {#if favorites}<span>{favorites} {favorites === 1 ? 'favorite' : 'favorites'}</span>{/if}
 </div>
 {#if places.length}

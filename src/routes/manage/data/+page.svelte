@@ -205,18 +205,18 @@
   </p>
   <div class="controls">
     <input bind:this={importFile} type="file" accept=".geojson,.json,.csv,.kml,.gpx" />
-    <button onclick={previewImport} disabled={importBusy}
-      >{#if importBusy}<LoaderCircle class="spin" size={16} />{/if} Preview import</button
-    >
+    <button onclick={previewImport} disabled={importBusy}>
+      {#if importBusy}<LoaderCircle class="spin" size={16} />{/if} Preview import
+    </button>
   </div>
   <small>Maximum {data.importMaxSizeMb} MiB and 10,000 records.</small>
   {#if importMessage}<p class="message">{importMessage}</p>{/if}
   {#if preview}
     <div class="preview-summary">
       <strong>{preview.total} records</strong>
-      <span>{preview.valid} valid</span><span>{preview.invalid} invalid</span><span
-        >{preview.duplicates} likely duplicates</span
-      >
+      <span>{preview.valid} valid</span><span>{preview.invalid} invalid</span><span>
+        {preview.duplicates} likely duplicates
+      </span>
     </div>
     <div class="preview-table">
       {#each preview.records as record (record.index)}
@@ -228,32 +228,32 @@
             onchange={(event) =>
               (included = toggle(included, record.index, event.currentTarget.checked))}
           />
-          <span
-            ><strong>{record.place?.name ?? record.sourceLabel}</strong><small
-              >{record.errors[0] ??
+          <span>
+            <strong>{record.place?.name ?? record.sourceLabel}</strong><small>
+              {record.errors[0] ??
                 record.duplicateOf?.reason ??
                 record.warnings[0] ??
-                'Ready to import'}</small
-            ></span
-          >
+                'Ready to import'}
+            </small>
+          </span>
           {#if record.duplicateOf}
-            <span class="copy"
-              ><input
+            <span class="copy">
+              <input
                 type="checkbox"
                 checked={copies.includes(record.index)}
                 onchange={(event) => {
                   copies = toggle(copies, record.index, event.currentTarget.checked);
                   if (event.currentTarget.checked) included = toggle(included, record.index, true);
                 }}
-              /> import copy</span
-            >
+              /> import copy
+            </span>
           {/if}
         </label>
       {/each}
     </div>
-    <button class="commit" onclick={commitImport} disabled={importBusy || !included.length}
-      >Import {included.length} selected places</button
-    >
+    <button class="commit" onclick={commitImport} disabled={importBusy || !included.length}>
+      Import {included.length} selected places
+    </button>
   {/if}
 </section>
 
@@ -261,27 +261,29 @@
   <DatabaseBackup size={22} />
   <h2>Complete backups</h2>
   <p>Creates a consistent SQLite snapshot plus every referenced original and thumbnail.</p>
-  <button onclick={createBackup} disabled={backupBusy}
-    >{#if backupBusy}<LoaderCircle class="spin" size={16} />{/if} Create backup</button
-  >
+  <button onclick={createBackup} disabled={backupBusy}>
+    {#if backupBusy}<LoaderCircle class="spin" size={16} />{/if} Create backup
+  </button>
   {#if backupMessage}<p class="message">{backupMessage}</p>{/if}
   <div class="backup-list">
     {#each data.backups as backup (backup.id)}
       <div>
-        <span
-          ><strong>{backup.filename}</strong><small
-            >{(backup.size / 1024 / 1024).toFixed(1)} MiB · {new Date(
+        <span>
+          <strong>{backup.filename}</strong><small>
+            {(backup.size / 1024 / 1024).toFixed(1)} MiB · {new Date(
               backup.createdAt
-            ).toLocaleString()}</small
-          ></span
-        >
+            ).toLocaleString()}
+          </small>
+        </span>
         <a
           href={`/api/backups/${encodeURIComponent(backup.id)}`}
-          aria-label={`Download ${backup.filename}`}><Download size={16} /></a
+          aria-label={`Download ${backup.filename}`}
         >
-        <button onclick={() => deleteBackup(backup.id)} aria-label={`Delete ${backup.filename}`}
-          ><Trash2 size={16} /></button
-        >
+          <Download size={16} />
+        </a>
+        <button onclick={() => deleteBackup(backup.id)} aria-label={`Delete ${backup.filename}`}>
+          <Trash2 size={16} />
+        </button>
       </div>
     {/each}
   </div>
@@ -302,10 +304,10 @@
   {#if restoreInspection}
     <div class="restore-confirm">
       <strong>Valid MapMe backup</strong>
-      <span
-        >Created {new Date(restoreInspection.manifest.createdAt).toLocaleString()} · schema {restoreInspection
-          .manifest.schemaVersion} · {restoreInspection.manifest.attachmentCount} attachments</span
-      >
+      <span>
+        Created {new Date(restoreInspection.manifest.createdAt).toLocaleString()} · schema {restoreInspection
+          .manifest.schemaVersion} · {restoreInspection.manifest.attachmentCount} attachments
+      </span>
       <button onclick={confirmRestore} disabled={restoreBusy}>Stage this restore</button>
     </div>
   {/if}
